@@ -14,7 +14,7 @@ x-service-templates:
     networks:
       - payment-processor
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
