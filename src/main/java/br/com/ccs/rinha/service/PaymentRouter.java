@@ -1,5 +1,7 @@
 package br.com.ccs.rinha.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -8,6 +10,8 @@ import java.util.UUID;
 
 @Service
 public class PaymentRouter {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentRouter.class);
 
     private final PaymentProcessorClient client;
     private final IntegrationHealthCheck healthCheck;
@@ -25,6 +29,7 @@ public class PaymentRouter {
 
         client.processPayment(correlationId, amount, useDefault)
                 .exceptionally(ex -> {
+                    log.error("Error processing payment: {}", ex.getMessage());
                     if (useDefault) {
                         // Retry com fallback se default falhar
                         client.processPayment(correlationId, amount, false)

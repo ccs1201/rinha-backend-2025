@@ -51,7 +51,10 @@ public class PaymentProcessorClient {
                                 .bodyToMono(PaymentResponse.class)
                                 .retryWhen(Retry.backoff(3, Duration.ofMillis(100)))
                                 .timeout(Duration.ofSeconds(5))
-                                .onErrorResume(e -> Mono.empty())
+                                .onErrorResume(e -> {
+                                    log.error("Error processing payment: {}", e.getMessage());
+                                    return Mono.empty();
+                                })
                                 .block()
                 , executor).orTimeout(5, TimeUnit.SECONDS);
     }
