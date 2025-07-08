@@ -18,7 +18,8 @@ services:
           memory: "50MB"
 
   app1:
-    image: ccs1201/rinha-backend-2025:latest
+    build: .
+#    image: ccs1201/rinha-backend-2025:latest
     hostname: app1
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -32,7 +33,8 @@ services:
           memory: "150MB"
 
   app2:
-    image: ccs1201/rinha-backend-2025:latest
+    build: .
+#    image: ccs1201/rinha-backend-2025:latest
     hostname: app2
     environment:
       - SPRING_PROFILES_ACTIVE=prod

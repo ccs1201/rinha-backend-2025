@@ -27,15 +27,16 @@ public class PaymentStorage {
     private final ExecutorService executor = Executors.newFixedThreadPool(8, Thread.ofVirtual().factory());
 
 
-    public void store(UUID correlationId, BigDecimal amount, boolean isDefault, OffsetDateTime processedAt) {
-        payments.put(correlationId, new Payment(correlationId, amount, isDefault, processedAt));
+    public void store(PaymentProcessorClient.PaymentRequest request, boolean isDefault) {
+        payments.put(request.correlationId(),
+                new Payment(request.correlationId(), request.amount(), isDefault, request.requestedAt()));
 
         if (isDefault) {
             defaultCount.incrementAndGet();
-            defaultAmount.updateAndGet(current -> current.add(amount));
+            defaultAmount.updateAndGet(current -> current.add(request.amount()));
         } else {
             fallbackCount.incrementAndGet();
-            fallbackAmount.updateAndGet(current -> current.add(amount));
+            fallbackAmount.updateAndGet(current -> current.add(request.amount()));
         }
     }
 
