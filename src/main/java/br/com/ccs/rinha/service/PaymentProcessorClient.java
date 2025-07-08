@@ -5,10 +5,8 @@ import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -16,7 +14,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.util.Objects.nonNull;
 
@@ -26,15 +23,14 @@ public class PaymentProcessorClient {
     private static final Logger log = LoggerFactory.getLogger(PaymentProcessorClient.class);
 
     private final PaymentStorage storage;
-    private final WebClient defaultClient;
-    private final WebClient fallbackClient;
     private final ExecutorService executor;
-    private final RestTemplate defaultTemplate;
+    private final RestTemplate restTemplate;
     private final String defaultUrl;
     private final String fallbackUrl;
 
     public PaymentProcessorClient(
             PaymentStorage paymentStorage,
+            RestTemplate restTemplate,
             @Value("${payment-processor.default.url}") String defaultUrl,
             @Value("${payment-processor.fallback.url}") String fallbackUrl) {
 
@@ -44,30 +40,8 @@ public class PaymentProcessorClient {
         log.info("Fallback fallback URL: {}", fallbackUrl);
         this.defaultUrl = defaultUrl.concat("/payments");
         this.fallbackUrl = fallbackUrl.concat("/payments");
-        this.defaultClient = WebClient.builder()
-                .baseUrl(defaultUrl)
-                .build();
-        this.fallbackClient = WebClient.builder()
-                .baseUrl(fallbackUrl)
-                .build();
-
-        this.defaultTemplate = new RestTemplate();
-        this.executor =
-//                buildInternalThreadPool();
-                Executors.newFixedThreadPool(50, Thread.ofVirtual().factory());
-    }
-
-    private ExecutorService buildInternalThreadPool() {
-        ThreadPoolExecutorFactoryBean factory = new ThreadPoolExecutorFactoryBean();
-        factory.setThreadFactory(Thread.ofVirtual().factory());
-        factory.setCorePoolSize(300);
-        factory.setMaxPoolSize(500);
-        factory.setQueueCapacity(5_000);
-        factory.setKeepAliveSeconds(60);
-        factory.setThreadNamePrefix("payment-process-client-");
-        factory.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        factory.afterPropertiesSet();
-        return factory.getObject();
+        this.restTemplate = restTemplate;
+        this.executor = Executors.newFixedThreadPool(100, Thread.ofVirtual().factory());
     }
 
     @PreDestroy
@@ -104,12 +78,12 @@ public class PaymentProcessorClient {
     }
 
     private void postToDefault(PaymentRequest request) {
-        defaultTemplate.postForEntity(defaultUrl, request, PaymentResponse.class);
+        restTemplate.postForEntity(defaultUrl, request, PaymentResponse.class);
         store(request, true);
     }
 
     private void postToFallback(PaymentRequest request) {
-        defaultTemplate.postForEntity(fallbackUrl, request, PaymentResponse.class);
+        restTemplate.postForEntity(fallbackUrl, request, PaymentResponse.class);
         store(request, false);
     }
 
@@ -117,23 +91,10 @@ public class PaymentProcessorClient {
         storage.store(request, isDefault);
     }
 
-    public ServiceHealth checkHealth(boolean isDefault) {
-        var client = isDefault ? defaultClient : fallbackClient;
-
-        return client.get()
-                .uri("/payments/service-health")
-                .retrieve()
-                .bodyToMono(ServiceHealth.class)
-                .block();
-    }
-
     public record PaymentRequest(UUID correlationId, BigDecimal amount,
                                  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") OffsetDateTime requestedAt) {
     }
 
     record PaymentResponse(String message) {
-    }
-
-    public record ServiceHealth(boolean failing, int minResponseTime) {
     }
 }

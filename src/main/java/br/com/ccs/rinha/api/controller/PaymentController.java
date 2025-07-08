@@ -2,6 +2,7 @@ package br.com.ccs.rinha.api.controller;
 
 import br.com.ccs.rinha.service.PaymentRouter;
 import br.com.ccs.rinha.service.PaymentStorage;
+import br.com.ccs.rinha.service.PaymentSummaryAggregator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +24,12 @@ public class PaymentController {
     private static final ResponseEntity<Void> response = ResponseEntity.accepted().build();
     private final PaymentRouter router;
     private final PaymentStorage storage;
+    private final PaymentSummaryAggregator aggregator;
 
-    public PaymentController(PaymentRouter router, PaymentStorage storage) {
+    public PaymentController(PaymentRouter router, PaymentStorage storage, PaymentSummaryAggregator aggregator) {
         this.router = router;
         this.storage = storage;
+        this.aggregator = aggregator;
     }
 
     @PostMapping("payments")
@@ -38,9 +41,14 @@ public class PaymentController {
     @GetMapping("payments-summary")
     public PaymentStorage.PaymentSummary getPaymentsSummary(@RequestParam(required = false) OffsetDateTime from,
                                                             @RequestParam(required = false) OffsetDateTime to) {
-        log.info("Getting payments summary from {} to {}", from, to);
-        return storage.getSummary(from, to);
+        log.info("Getting aggregated payments summary from {} to {}", from, to);
+        return aggregator.getAggregatedSummary(from, to);
+    }
 
+    @GetMapping("local-summary")
+    public PaymentStorage.PaymentSummary getLocalSummary(@RequestParam(required = false) OffsetDateTime from,
+                                                        @RequestParam(required = false) OffsetDateTime to) {
+        return storage.getSummary(from, to);
     }
 
     @PostMapping("/purge-payments")
