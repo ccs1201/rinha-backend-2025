@@ -7,11 +7,11 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public final class PaymentRequest {
-    private UUID correlationId;
-    private BigDecimal amount;
+    public UUID correlationId;
+    public BigDecimal amount;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    private OffsetDateTime processedAt;
-    private boolean isDefault;
+    public OffsetDateTime processedAt;
+    public boolean isDefault;
 
     public PaymentRequest() {
     }
@@ -27,23 +27,11 @@ public final class PaymentRequest {
         this.isDefault = isDefault;
     }
 
-    public UUID correlationId() {
-        return correlationId;
+    public void setDefaultFalse() {
+        this.isDefault = false;
     }
 
-    public BigDecimal amount() {
-        return amount;
-    }
-
-    public OffsetDateTime processedAt() {
-        return processedAt;
-    }
-
-    public boolean isDefault() {
-        return isDefault;
-    }
-
-    public void setDefault(boolean isDefault) {
-        this.isDefault = isDefault;
+    public void setDefaultTrue() {
+        this.isDefault = true;
     }
 }

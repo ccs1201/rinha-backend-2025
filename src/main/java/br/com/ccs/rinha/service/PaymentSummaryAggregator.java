@@ -9,6 +9,7 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -21,7 +22,8 @@ public class PaymentSummaryAggregator {
     private final RestTemplate restTemplate;
     private final String otherInstanceUrl;
 
-    public PaymentSummaryAggregator(PaymentStorage storage, RestTemplate restTemplate,
+    public PaymentSummaryAggregator(PaymentStorage storage,
+                                    RestTemplate restTemplate,
                                     @Value("${INSTANCE_NAME:app1}") String instanceName) {
         this.storage = storage;
         this.restTemplate = restTemplate;
@@ -30,29 +32,41 @@ public class PaymentSummaryAggregator {
     }
 
     public PaymentStorage.PaymentSummary getAggregatedSummary(OffsetDateTime from, OffsetDateTime to) {
-        var localSummary = storage.getSummary(from, to);
+        var localSummary = getLocalSummary(from, to);
 
         try {
             var params = buildParams(from, to);
+            var remoteSummary = fetchRemoteSummary(params);
 
-            var remoteSummary = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return restTemplate.getForObject(otherInstanceUrl + "/local-summary" + params,
-                            PaymentStorage.PaymentSummary.class);
-                } catch (Exception e) {
-                    log.error("Error while fetching remote summary", e);
-                    return new PaymentStorage.PaymentSummary(
-                            new PaymentStorage.Summary(0, BigDecimal.ZERO),
-                            new PaymentStorage.Summary(0, BigDecimal.ZERO)
-                    );
-                }
-            }).orTimeout(2000, MILLISECONDS).join();
+            CompletableFuture.allOf(localSummary, remoteSummary).join();
 
-            return mergeSummaries(localSummary, remoteSummary);
+            return mergeSummaries(localSummary.get(), remoteSummary.get());
         } catch (Exception e) {
             log.error("Error while fetching remote summary", e);
-            return localSummary;
+            return localSummary.join();
         }
+    }
+
+    private CompletableFuture<PaymentStorage.PaymentSummary> getLocalSummary(OffsetDateTime from, OffsetDateTime to) {
+        return CompletableFuture.supplyAsync(() -> storage.getSummary(from, to),
+                        Executors.newSingleThreadExecutor())
+                .orTimeout(1500, MILLISECONDS);
+    }
+
+    private CompletableFuture<PaymentStorage.PaymentSummary> fetchRemoteSummary(String params) {
+        return CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return restTemplate.getForObject(otherInstanceUrl + "/local-summary" + params,
+                                PaymentStorage.PaymentSummary.class);
+                    } catch (Exception e) {
+                        log.error("Error while fetching remote summary", e);
+                        return new PaymentStorage.PaymentSummary(
+                                new PaymentStorage.Summary(0, BigDecimal.ZERO),
+                                new PaymentStorage.Summary(0, BigDecimal.ZERO)
+                        );
+                    }
+                }, Executors.newVirtualThreadPerTaskExecutor())
+                .orTimeout(1500, MILLISECONDS);
     }
 
     private String buildParams(OffsetDateTime from, OffsetDateTime to) {
