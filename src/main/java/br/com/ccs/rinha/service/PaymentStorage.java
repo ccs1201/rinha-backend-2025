@@ -1,5 +1,6 @@
 package br.com.ccs.rinha.service;
 
+import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.exception.PaymentSummaryException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ import static java.util.concurrent.CompletableFuture.supplyAsync;
 @Service
 public class PaymentStorage {
 
-    private final ConcurrentHashMap<UUID, Payment> payments = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, PaymentRequest> payments = new ConcurrentHashMap<>();
     private final AtomicLong defaultCount = new AtomicLong();
     private final AtomicLong fallbackCount = new AtomicLong();
     private final AtomicReference<BigDecimal> defaultAmount = new AtomicReference<>(BigDecimal.ZERO);
@@ -27,9 +28,8 @@ public class PaymentStorage {
     private final ExecutorService executor = Executors.newFixedThreadPool(8, Thread.ofVirtual().factory());
 
 
-    public void store(PaymentProcessorClient.PaymentRequest request, boolean isDefault) {
-        payments.put(request.correlationId(),
-                new Payment(request.correlationId(), request.amount(), isDefault, request.requestedAt()));
+    public void store(PaymentRequest request, boolean isDefault) {
+        payments.put(request.correlationId(),request);
 
         if (isDefault) {
             defaultCount.incrementAndGet();
@@ -49,8 +49,8 @@ public class PaymentStorage {
         }
 
         var filtered = payments.values().parallelStream()
-                .filter(p -> (from == null || !p.processedAt.isBefore(from)) &&
-                        (to == null || !p.processedAt.isAfter(to)))
+                .filter(p -> (from == null || !p.processedAt().isBefore(from)) &&
+                        (to == null || !p.processedAt().isAfter(to)))
                 .toList();
 
         var futures = new CompletableFuture[4];
@@ -58,27 +58,27 @@ public class PaymentStorage {
         //total req default
         futures[0] = supplyAsync(() -> filtered
                 .parallelStream()
-                .filter(p -> p.isDefault)
+                .filter(PaymentRequest::isDefault)
                 .count(), executor);
 
         //total amount default
         futures[1] = supplyAsync(() -> filtered
                 .parallelStream()
-                .filter(p -> p.isDefault)
-                .map(p -> p.amount)
+                .filter(PaymentRequest::isDefault)
+                .map(PaymentRequest::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add), executor);
 
         //total req fallback
         futures[2] = supplyAsync(() -> filtered
                 .parallelStream()
-                .filter(p -> !p.isDefault)
+                .filter(p -> !p.isDefault())
                 .count());
 
         //total amount fallback
         futures[3] = supplyAsync(() -> filtered
                 .parallelStream()
-                .filter(p -> !p.isDefault)
-                .map(p -> p.amount)
+                .filter(p -> !p.isDefault())
+                .map(PaymentRequest::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
         CompletableFuture.allOf(futures).join();
@@ -97,9 +97,6 @@ public class PaymentStorage {
         fallbackCount.set(0);
         defaultAmount.set(BigDecimal.ZERO);
         fallbackAmount.set(BigDecimal.ZERO);
-    }
-
-    record Payment(UUID correlationId, BigDecimal amount, boolean isDefault, OffsetDateTime processedAt) {
     }
 
     public record PaymentSummary(

@@ -46,7 +46,7 @@ public class PaymentSummaryAggregator {
                             new PaymentStorage.Summary(0, BigDecimal.ZERO)
                     );
                 }
-            }).orTimeout(1000, MILLISECONDS).join();
+            }).orTimeout(2000, MILLISECONDS).join();
 
             return mergeSummaries(localSummary, remoteSummary);
         } catch (Exception e) {

@@ -1,6 +1,6 @@
 package br.com.ccs.rinha.service;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,9 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,8 +48,8 @@ public class PaymentProcessorClient {
         }
     }
 
-    public void processPayment(UUID correlationId, BigDecimal amount) {
-        var request = new PaymentRequest(correlationId, amount, OffsetDateTime.now());
+    public void processPayment(PaymentRequest request) {
+
         CompletableFuture.runAsync(() ->
                         postToDefault(request), executor)
                 .exceptionally(e -> {
@@ -63,7 +60,7 @@ public class PaymentProcessorClient {
                 }).exceptionally(e -> {
                     log.error("Error processing payment on fallback service: {}", e.getMessage());
                     sleep();
-                    processPayment(request.correlationId, request.amount);
+                    processPayment(request);
                     return null;
                 });
     }
@@ -89,10 +86,6 @@ public class PaymentProcessorClient {
 
     private void store(PaymentRequest request, boolean isDefault) {
         storage.store(request, isDefault);
-    }
-
-    public record PaymentRequest(UUID correlationId, BigDecimal amount,
-                                 @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") OffsetDateTime requestedAt) {
     }
 
     record PaymentResponse(String message) {

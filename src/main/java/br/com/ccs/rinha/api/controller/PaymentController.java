@@ -1,5 +1,6 @@
 package br.com.ccs.rinha.api.controller;
 
+import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.service.PaymentRouter;
 import br.com.ccs.rinha.service.PaymentStorage;
 import br.com.ccs.rinha.service.PaymentSummaryAggregator;
@@ -12,9 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @RestController
 public class PaymentController {
@@ -34,7 +33,7 @@ public class PaymentController {
 
     @PostMapping("payments")
     public ResponseEntity<Void> createPayment(@RequestBody PaymentRequest paymentRequest) {
-        router.processPayment(paymentRequest.correlationId(), paymentRequest.amount());
+        router.processPayment(paymentRequest);
         return response;
     }
 
@@ -58,6 +57,5 @@ public class PaymentController {
     }
 
 
-    public record PaymentRequest(UUID correlationId, BigDecimal amount) {
-    }
+
 }
