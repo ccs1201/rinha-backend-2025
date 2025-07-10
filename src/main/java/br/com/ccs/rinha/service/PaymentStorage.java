@@ -7,13 +7,15 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static java.util.Objects.nonNull;
 
 @Service
 public class PaymentStorage {
@@ -30,10 +32,10 @@ public class PaymentStorage {
         executor.shutdown();
     }
 
-    public void store(PaymentRequest request, boolean isDefault) {
+    public void store(PaymentRequest request) {
         payments.put(request.correlationId, request);
 
-        if (isDefault) {
+        if (request.isDefault) {
             defaultCount.incrementAndGet();
             defaultAmount.updateAndGet(current -> current.add(request.amount));
         } else {
@@ -43,84 +45,36 @@ public class PaymentStorage {
     }
 
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
+
         if (from == null && to == null) {
-            return new PaymentSummary(
-                    new Summary(defaultCount.get(), defaultAmount.get()),
-                    new Summary(fallbackCount.get(), fallbackAmount.get())
-            );
+            return getPaymentsSummary();
         }
 
-        var filtered = payments.values().parallelStream()
-                .filter(p -> (from == null || !p.processedAt.isBefore(from)) &&
-                        (to == null || !p.processedAt.isAfter(to)))
-                .toList();
+        if (nonNull(from) && OffsetDateTime.MIN.isBefore(from) && nonNull(to) && OffsetDateTime.now().isAfter(to)) {
+            return getPaymentsSummary();
+        }
 
-//        var futures = new CompletableFuture[4];
-//
-//        //total req default
-//        futures[0] = supplyAsync(() -> getDefaultCount(filtered), executor);
-//
-//        //total amount default
-//        futures[1] = supplyAsync(() -> getDefaultAmount(filtered), executor);
-//
-//        //total req fallback
-//        futures[2] = supplyAsync(() -> getFallbackCount(filtered), executor);
-//
-//        //total amount fallback
-//        futures[3] = supplyAsync(() -> getFallbackAmount(filtered), executor);
-//
-//        CompletableFuture.allOf(futures).join();
-
-        return new PaymentSummary(getADefault(filtered), getAFallback(filtered));
-
-//        try {
-//            return new PaymentSummary(new Summary((Long) futures[0].get(), (BigDecimal) futures[1].get()), new Summary((Long) futures[2].get(), (BigDecimal) futures[3].get()));
-//        } catch (Exception e) {
-//            Thread.currentThread().interrupt();
-//            throw new PaymentSummaryException(e);
-//        }
-    }
-
-    private Summary getAFallback(List<PaymentRequest> filtered) {
-        return new Summary(getFallbackCount(filtered), getFallbackAmount(filtered));
-    }
-
-    private static Summary getADefault(List<PaymentRequest> filtered) {
-        return new Summary(getDefaultCount(filtered), getDefaultAmount(filtered));
-    }
-
-    private static BigDecimal getFallbackAmount(List<PaymentRequest> filtered) {
-//        Thread.currentThread().setPriority(9);
-        return filtered
+        var filtered = payments
+                .values()
                 .parallelStream()
-                .filter(p -> !p.isDefault)
-                .map(paymentRequest -> paymentRequest.amount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .filter(p -> (from == null || p.processedAt.isAfter(from)) &&
+                        (to == null || p.processedAt.isBefore(to)))
+                .collect(Collectors
+                        .partitioningBy(p -> p.isDefault,
+                                Collectors.teeing(
+                                        Collectors.counting(),
+                                        Collectors.reducing(BigDecimal.ZERO, p -> p.amount, BigDecimal::add),
+                                        Summary::new)));
+
+        return new PaymentSummary(filtered.get(true), filtered.get(false));
+
     }
 
-    private static long getFallbackCount(List<PaymentRequest> filtered) {
-//        Thread.currentThread().setPriority(8);
-        return filtered
-                .parallelStream()
-                .filter(p -> !p.isDefault)
-                .count();
-    }
-
-    private static BigDecimal getDefaultAmount(List<PaymentRequest> filtered) {
-//        Thread.currentThread().setPriority(7);
-        return filtered
-                .parallelStream()
-                .filter(paymentRequest -> paymentRequest.isDefault)
-                .map(paymentRequest -> paymentRequest.amount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private static long getDefaultCount(List<PaymentRequest> filtered) {
-//        Thread.currentThread().setPriority(6);
-        return filtered
-                .parallelStream()
-                .filter(paymentRequest -> paymentRequest.isDefault)
-                .count();
+    private PaymentSummary getPaymentsSummary() {
+        return new PaymentSummary(
+                new Summary(defaultCount.get(), defaultAmount.get()),
+                new Summary(fallbackCount.get(), fallbackAmount.get())
+        );
     }
 
     public void purge() {

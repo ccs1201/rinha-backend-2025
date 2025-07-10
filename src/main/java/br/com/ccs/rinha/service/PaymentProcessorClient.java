@@ -36,14 +36,15 @@ public class PaymentProcessorClient {
 
         this.storage = paymentStorage;
 
-        log.info("Default service URL: {}", defaultUrl);
-        log.info("Fallback fallback URL: {}", fallbackUrl);
-        log.info("Thread pool size: {}", threadPoolSize);
-        log.info("Virtual thread enabled: {}", virtualThread);
         this.defaultUrl = defaultUrl.concat("/payments");
         this.fallbackUrl = fallbackUrl.concat("/payments");
         this.restTemplate = restTemplate;
         this.executor = Executors.newFixedThreadPool(threadPoolSize, Thread.ofVirtual().factory());
+
+        log.info("Default service URL: {}", this.defaultUrl);
+        log.info("Fallback fallback URL: {}", this.fallbackUrl);
+        log.info("Thread pool size: {}", threadPoolSize);
+        log.info("Virtual thread enabled: {}", virtualThread);
     }
 
     @PreDestroy
@@ -54,45 +55,30 @@ public class PaymentProcessorClient {
     }
 
     public void processPayment(PaymentRequest request) {
+        request.processedAt = OffsetDateTime.now();
         CompletableFuture.runAsync(() ->
                         postToDefault(request), executor)
                 .exceptionally(e -> {
                     log.error("Error processing payment on default service: {}", e.getMessage());
-                    sleep(2000);
                     postToFallback(request);
                     return null;
                 }).exceptionally(e -> {
                     log.error("Error processing payment on fallback service: {}", e.getMessage());
-                    sleep(2000);
                     processPayment(request);
                     return null;
                 });
     }
 
-    private static void sleep(int ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
-    }
-
     private void postToDefault(PaymentRequest request) {
-        request.processedAt = OffsetDateTime.now();
         request.setDefaultTrue();
         restTemplate.postForEntity(defaultUrl, request, PaymentResponse.class);
-        store(request, true);
+        storage.store(request);
     }
 
     private void postToFallback(PaymentRequest request) {
         request.setDefaultFalse();
         restTemplate.postForEntity(fallbackUrl, request, PaymentResponse.class);
-        store(request, false);
-    }
-
-    private void store(PaymentRequest request, boolean isDefault) {
-        storage.store(request, isDefault);
+        storage.store(request);
     }
 
     record PaymentResponse(String message) {

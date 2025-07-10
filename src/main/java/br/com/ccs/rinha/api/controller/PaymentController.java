@@ -33,23 +33,22 @@ public class PaymentController {
         this.aggregator = aggregator;
     }
 
-    @PostMapping("payments")
+    @PostMapping("/payments")
     public ResponseEntity<Void> createPayment(@RequestBody PaymentRequest paymentRequest) {
         client.processPayment(paymentRequest);
         return response;
     }
 
-    @GetMapping("payments-summary")
+    @GetMapping("/payments-summary")
     public PaymentStorage.PaymentSummary getPaymentsSummary(@RequestParam(required = false) OffsetDateTime from,
-                                                            @RequestParam(required = false) OffsetDateTime to) throws InterruptedException {
-        Thread.sleep(50);
+                                                            @RequestParam(required = false) OffsetDateTime to) {
         long start = System.currentTimeMillis();
         var summary = aggregator.getAggregatedSummary(from, to);
         log.info("Got aggregated payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
         return summary;
     }
 
-    @GetMapping("local-summary")
+    @GetMapping("/local-summary")
     public PaymentStorage.PaymentSummary getLocalSummary(@RequestParam(required = false) OffsetDateTime from,
                                                          @RequestParam(required = false) OffsetDateTime to) {
         return storage.getSummary(from, to);
@@ -57,7 +56,9 @@ public class PaymentController {
 
     @PostMapping("/purge-payments")
     public ResponseEntity<Void> purgePayments() {
+        log.info("Purging payments");
         storage.purge();
+        log.info("Payments purged");
         return ResponseEntity.ok().build();
     }
 

@@ -1,5 +1,6 @@
 package br.com.ccs.rinha.service;
 
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -21,6 +23,8 @@ public class PaymentSummaryAggregator {
     private final PaymentStorage storage;
     private final RestTemplate restTemplate;
     private final String otherInstanceUrl;
+    private final ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public PaymentSummaryAggregator(PaymentStorage storage,
                                     RestTemplate restTemplate,
@@ -29,6 +33,12 @@ public class PaymentSummaryAggregator {
         this.restTemplate = restTemplate;
         this.otherInstanceUrl = "app1".equals(instanceName) ? "http://app2:8080" : "http://app1:8080";
         log.info("Current instance {} Other instance URL: {}", instanceName, otherInstanceUrl);
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        singleThreadExecutor.shutdown();
+        virtualThreadExecutor.shutdown();
     }
 
     public PaymentStorage.PaymentSummary getAggregatedSummary(OffsetDateTime from, OffsetDateTime to) {
@@ -48,8 +58,7 @@ public class PaymentSummaryAggregator {
     }
 
     private CompletableFuture<PaymentStorage.PaymentSummary> getLocalSummary(OffsetDateTime from, OffsetDateTime to) {
-        return CompletableFuture.supplyAsync(() -> storage.getSummary(from, to),
-                        Executors.newSingleThreadExecutor())
+        return CompletableFuture.supplyAsync(() -> storage.getSummary(from, to), singleThreadExecutor)
                 .orTimeout(1500, MILLISECONDS);
     }
 
@@ -65,7 +74,7 @@ public class PaymentSummaryAggregator {
                                 new PaymentStorage.Summary(0, BigDecimal.ZERO)
                         );
                     }
-                }, Executors.newVirtualThreadPerTaskExecutor())
+                }, virtualThreadExecutor)
                 .orTimeout(1500, MILLISECONDS);
     }
 
@@ -93,4 +102,5 @@ public class PaymentSummaryAggregator {
                 )
         );
     }
+
 }
