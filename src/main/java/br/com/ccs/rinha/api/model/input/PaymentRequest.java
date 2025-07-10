@@ -10,7 +10,7 @@ public final class PaymentRequest {
     public UUID correlationId;
     public BigDecimal amount;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    public OffsetDateTime processedAt;
+    public OffsetDateTime requestedAt;
     public boolean isDefault;
 
     public PaymentRequest() {
@@ -20,10 +20,10 @@ public final class PaymentRequest {
         this(correlationId, amount, OffsetDateTime.now(), true);
     }
 
-    public PaymentRequest(UUID correlationId, BigDecimal amount, OffsetDateTime processedAt, boolean isDefault) {
+    public PaymentRequest(UUID correlationId, BigDecimal amount, OffsetDateTime requestedAt, boolean isDefault) {
         this.correlationId = correlationId;
         this.amount = amount;
-        this.processedAt = processedAt;
+        this.requestedAt = requestedAt;
         this.isDefault = isDefault;
     }
 
@@ -34,4 +34,5 @@ public final class PaymentRequest {
     public void setDefaultTrue() {
         this.isDefault = true;
     }
+
 }

@@ -6,9 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,31 +54,36 @@ public class PaymentProcessorClient {
         }
     }
 
-    public void processPayment(PaymentRequest request) {
-        request.processedAt = OffsetDateTime.now();
-        CompletableFuture.runAsync(() ->
-                        postToDefault(request), executor)
-                .exceptionally(e -> {
-                    log.error("Error processing payment on default service: {}", e.getMessage());
-                    postToFallback(request);
-                    return null;
-                }).exceptionally(e -> {
-                    log.error("Error processing payment on fallback service: {}", e.getMessage());
-                    processPayment(request);
+    public void processPayment(PaymentRequest paymentRequest) {
+        doProcessAsync(paymentRequest);
+    }
+
+    private void doProcessAsync(PaymentRequest paymentRequest) {
+              CompletableFuture.runAsync(() -> {
+                    try {
+                        postToDefault(paymentRequest);
+                    } catch (RestClientException e) {
+                        log.error("Error processing payment on default service: {}", e.getMessage());
+                        postToFallback(paymentRequest);
+                    }
+                }, executor)
+                .exceptionally(ex -> {
+                    log.error("Error processing payment on fallback service: {}", ex.getMessage());
+                    processPayment(paymentRequest);
                     return null;
                 });
     }
 
-    private void postToDefault(PaymentRequest request) {
-        request.setDefaultTrue();
-        restTemplate.postForEntity(defaultUrl, request, PaymentResponse.class);
-        storage.store(request);
+    private void postToDefault(PaymentRequest paymentRequest) {
+        paymentRequest.setDefaultTrue();
+        restTemplate.postForEntity(defaultUrl, paymentRequest, PaymentResponse.class);
+        storage.store(paymentRequest);
     }
 
-    private void postToFallback(PaymentRequest request) {
-        request.setDefaultFalse();
-        restTemplate.postForEntity(fallbackUrl, request, PaymentResponse.class);
-        storage.store(request);
+    private void postToFallback(PaymentRequest paymentRequest) {
+        paymentRequest.setDefaultFalse();
+        restTemplate.postForEntity(fallbackUrl, paymentRequest, PaymentResponse.class);
+        storage.store(paymentRequest);
     }
 
     record PaymentResponse(String message) {

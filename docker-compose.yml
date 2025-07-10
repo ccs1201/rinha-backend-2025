@@ -6,7 +6,7 @@ x-service-templates:
     deploy:
       resources:
         limits:
-          cpus: "1.5"
+          cpus: "2"
           memory: "200MB"
   
   payment-processor-db: &payment-processor-db

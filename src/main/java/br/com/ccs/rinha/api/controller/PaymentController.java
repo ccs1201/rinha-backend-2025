@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 @RestController
 public class PaymentController {
@@ -35,7 +37,10 @@ public class PaymentController {
 
     @PostMapping("/payments")
     public ResponseEntity<Void> createPayment(@RequestBody PaymentRequest paymentRequest) {
-        client.processPayment(paymentRequest);
+        CompletableFuture.runAsync(() -> {
+            paymentRequest.requestedAt = OffsetDateTime.now();
+            client.processPayment(paymentRequest);
+        }, Executors.newVirtualThreadPerTaskExecutor());
         return response;
     }
 

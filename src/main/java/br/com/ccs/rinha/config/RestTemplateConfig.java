@@ -23,7 +23,7 @@ public class RestTemplateConfig {
         return new RestTemplate();
     }
 
-    //Apenas esquentar o rest template e dispatcher servelet
+    //Apenas esquentar o resttemplate e dispatcher servlet
     @Bean
     public CommandLineRunner run(RestTemplate restTemplate) {
         return args -> {
