@@ -59,7 +59,7 @@ public class PaymentSummaryAggregator {
 
     private CompletableFuture<PaymentStorage.PaymentSummary> getLocalSummary(OffsetDateTime from, OffsetDateTime to) {
         return CompletableFuture.supplyAsync(() -> storage.getSummary(from, to), singleThreadExecutor)
-                .orTimeout(1500, MILLISECONDS);
+                .orTimeout(3000, MILLISECONDS);
     }
 
     private CompletableFuture<PaymentStorage.PaymentSummary> fetchRemoteSummary(String params) {
@@ -75,7 +75,7 @@ public class PaymentSummaryAggregator {
                         );
                     }
                 }, virtualThreadExecutor)
-                .orTimeout(1500, MILLISECONDS);
+                .orTimeout(3000, MILLISECONDS);
     }
 
     private String buildParams(OffsetDateTime from, OffsetDateTime to) {

@@ -4,6 +4,7 @@ import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.service.PaymentProcessorClient;
 import br.com.ccs.rinha.service.PaymentStorage;
 import br.com.ccs.rinha.service.PaymentSummaryAggregator;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @RestController
@@ -28,6 +30,7 @@ public class PaymentController {
     private final PaymentProcessorClient client;
     private final PaymentStorage storage;
     private final PaymentSummaryAggregator aggregator;
+    private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public PaymentController(PaymentProcessorClient client, PaymentStorage storage, PaymentSummaryAggregator aggregator) {
         this.client = client;
@@ -40,13 +43,13 @@ public class PaymentController {
         CompletableFuture.runAsync(() -> {
             paymentRequest.requestedAt = OffsetDateTime.now();
             client.processPayment(paymentRequest);
-        }, Executors.newVirtualThreadPerTaskExecutor());
+        }, virtualExecutor);
         return response;
     }
 
     @GetMapping("/payments-summary")
-    public PaymentStorage.PaymentSummary getPaymentsSummary(@RequestParam(required = false) OffsetDateTime from,
-                                                            @RequestParam(required = false) OffsetDateTime to) {
+    public PaymentStorage.PaymentSummary getPaymentsSummary(@RequestParam OffsetDateTime from,
+                                                            @RequestParam OffsetDateTime to) {
         long start = System.currentTimeMillis();
         var summary = aggregator.getAggregatedSummary(from, to);
         log.info("Got aggregated payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
@@ -54,8 +57,8 @@ public class PaymentController {
     }
 
     @GetMapping("/local-summary")
-    public PaymentStorage.PaymentSummary getLocalSummary(@RequestParam(required = false) OffsetDateTime from,
-                                                         @RequestParam(required = false) OffsetDateTime to) {
+    public PaymentStorage.PaymentSummary getLocalSummary(@RequestParam OffsetDateTime from,
+                                                         @RequestParam OffsetDateTime to) {
         return storage.getSummary(from, to);
     }
 
@@ -71,6 +74,11 @@ public class PaymentController {
     @ResponseStatus(HttpStatus.OK)
     public void check() {
         log.info("OK");
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        virtualExecutor.shutdown();
     }
 
 }

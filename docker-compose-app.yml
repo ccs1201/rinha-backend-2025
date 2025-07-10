@@ -14,8 +14,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: "50MB"
+          cpus: "0.1"
+          memory: "30MB"
 
   app1:
     image: ccs1201/rinha-backend-2025:latest
@@ -28,16 +28,16 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - INSTANCE_NAME=app1
       - SERVER_PORT=8080
-      - THREAD_POOL_SIZE=50
-      - JAVA_OPTS=-Dlogging.level.root=info -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx120m -Xms120m -XX:MaxMetaspaceSize=64m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.rmi.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=false -Djava.rmi.server.hostname=0.0.0.0
+      - THREAD_POOL_SIZE=75
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx140m -Xms140m -XX:MaxMetaspaceSize=40m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
     networks:
       - backend
       - payment-processor
     deploy:
       resources:
         limits:
-          cpus: "0.6"
-          memory: "150MB"
+          cpus: "0.7"
+          memory: "160MB"
 
   app2:
     image: ccs1201/rinha-backend-2025:latest
@@ -50,8 +50,8 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - INSTANCE_NAME=app2
       - SERVER_PORT=8080
-      - THREAD_POOL_SIZE=50
-      - JAVA_OPTS=-Dlogging.level.root=info -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx120m -Xms120m -XX:MaxMetaspaceSize=64m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9011 -Dcom.sun.management.jmxremote.rmi.port=9011 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=false -Djava.rmi.server.hostname=0.0.0.0
+      - THREAD_POOL_SIZE=75
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx140m -Xms140m -XX:MaxMetaspaceSize=40m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9011 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
     networks:
       - backend
       - payment-processor
@@ -59,7 +59,21 @@ services:
       resources:
         limits:
           cpus: "0.7"
-          memory: "150MB"
+          memory: "160MB"
+
+#  redis:
+#    image: redis:7-alpine
+#    container_name: redis-storage
+#    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru --save ""
+#    ports:
+#      - "6379:6379"
+#    networks:
+#      - backend
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: "0.1"
+#          memory: "60MB"
 
 networks:
   backend:

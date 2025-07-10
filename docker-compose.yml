@@ -6,8 +6,8 @@ x-service-templates:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: "200MB"
+          cpus: "1.5"
+          memory: "100MB"
   
   payment-processor-db: &payment-processor-db
     image: postgres:17-alpine
@@ -22,8 +22,8 @@ x-service-templates:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: "500MB"
+          cpus: "1.5"
+          memory: "250MB"
 
 services:
   payment-processor-1:
