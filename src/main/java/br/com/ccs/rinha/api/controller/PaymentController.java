@@ -2,8 +2,7 @@ package br.com.ccs.rinha.api.controller;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.service.PaymentProcessorClient;
-import br.com.ccs.rinha.service.PaymentStorage;
-import br.com.ccs.rinha.service.PaymentSummaryAggregator;
+import br.com.ccs.rinha.service.PaymentRepository;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,52 +19,49 @@ import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 public class PaymentController {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
-    private static final ResponseEntity<Void> response = ResponseEntity.accepted().build();
     private final PaymentProcessorClient client;
-    private final PaymentStorage storage;
-    private final PaymentSummaryAggregator aggregator;
+    private final PaymentRepository repository;
     private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
+    private final AtomicInteger createCount = new AtomicInteger(0);
+    private final AtomicInteger summaryCount = new AtomicInteger(0);
 
-    public PaymentController(PaymentProcessorClient client, PaymentStorage storage, PaymentSummaryAggregator aggregator) {
+    public PaymentController(PaymentProcessorClient client, PaymentRepository repository) {
         this.client = client;
-        this.storage = storage;
-        this.aggregator = aggregator;
+        this.repository = repository;
     }
 
     @PostMapping("/payments")
-    public ResponseEntity<Void> createPayment(@RequestBody PaymentRequest paymentRequest) {
+    public void createPayment(@RequestBody PaymentRequest paymentRequest) {
+        createCount.incrementAndGet();
         CompletableFuture.runAsync(() -> {
             paymentRequest.requestedAt = OffsetDateTime.now();
             client.processPayment(paymentRequest);
         }, virtualExecutor);
-        return response;
     }
 
     @GetMapping("/payments-summary")
-    public PaymentStorage.PaymentSummary getPaymentsSummary(@RequestParam OffsetDateTime from,
-                                                            @RequestParam OffsetDateTime to) {
+    public PaymentRepository.PaymentSummary getPaymentsSummary(@RequestParam OffsetDateTime from,
+                                                               @RequestParam OffsetDateTime to) {
+        summaryCount.incrementAndGet();
         long start = System.currentTimeMillis();
-        var summary = aggregator.getAggregatedSummary(from, to);
+        var summary = repository.getSummary(from, to);
         log.info("Got aggregated payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
         return summary;
-    }
-
-    @GetMapping("/local-summary")
-    public PaymentStorage.PaymentSummary getLocalSummary(@RequestParam OffsetDateTime from,
-                                                         @RequestParam OffsetDateTime to) {
-        return storage.getSummary(from, to);
     }
 
     @PostMapping("/purge-payments")
     public ResponseEntity<Void> purgePayments() {
         log.info("Purging payments");
-        storage.purge();
+        repository.purge();
+        createCount.set(0);
+        summaryCount.set(0);
         log.info("Payments purged");
         return ResponseEntity.ok().build();
     }
@@ -79,6 +75,11 @@ public class PaymentController {
     @PreDestroy
     public void shutdown() {
         virtualExecutor.shutdown();
+    }
+
+    @GetMapping("/stats")
+    public String getStats() {
+        return String.format(" createCount: %d %n summaryCount: %d", createCount.get(), summaryCount.get());
     }
 
 }

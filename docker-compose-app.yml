@@ -29,7 +29,8 @@ services:
       - INSTANCE_NAME=app1
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=75
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx140m -Xms140m -XX:MaxMetaspaceSize=40m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
+      - STORAGE=redis
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx130m -Xms130m -XX:MaxMetaspaceSize=60m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
     networks:
       - backend
       - payment-processor
@@ -51,7 +52,8 @@ services:
       - INSTANCE_NAME=app2
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=75
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx140m -Xms140m -XX:MaxMetaspaceSize=40m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9011 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
+      - STORAGE=redis
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx130m -Xms130m -XX:MaxMetaspaceSize=60m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9011 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
     networks:
       - backend
       - payment-processor
@@ -61,19 +63,19 @@ services:
           cpus: "0.7"
           memory: "160MB"
 
-#  redis:
-#    image: redis:7-alpine
-#    container_name: redis-storage
-#    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru --save ""
-#    ports:
-#      - "6379:6379"
-#    networks:
-#      - backend
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: "0.1"
-#          memory: "60MB"
+  redis:
+    image: redis:7-alpine
+    container_name: redis-storage
+    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru --save ""
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: "60MB"
 
 networks:
   backend:

@@ -20,21 +20,21 @@ public class PaymentProcessorClient {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentProcessorClient.class);
 
-    private final PaymentStorage storage;
+    private final PaymentRepository repository;
     private final ExecutorService executor;
     private final RestTemplate restTemplate;
     private final String defaultUrl;
     private final String fallbackUrl;
 
     public PaymentProcessorClient(
-            PaymentStorage paymentStorage,
+            PaymentRepository paymentRepository,
             RestTemplate restTemplate,
             @Value("${payment-processor.default.url}") String defaultUrl,
             @Value("${payment-processor.fallback.url}") String fallbackUrl,
             @Value("${THREAD_POOL_SIZE:10}") int threadPoolSize,
             @Value("${spring.threads.virtual.enabled}") boolean virtualThread) {
 
-        this.storage = paymentStorage;
+        this.repository = paymentRepository;
 
         this.defaultUrl = defaultUrl.concat("/payments");
         this.fallbackUrl = fallbackUrl.concat("/payments");
@@ -63,12 +63,12 @@ public class PaymentProcessorClient {
                     try {
                         postToDefault(paymentRequest);
                     } catch (RestClientException e) {
-                        log.error("Error processing payment on default service: {}", e.getMessage());
+//                        log.error("Error processing payment on default service: {}", e.getMessage());
                         postToFallback(paymentRequest);
                     }
                 }, executor)
                 .exceptionally(ex -> {
-                    log.error("Error processing payment on fallback service: {}", ex.getMessage());
+//                    log.error("Error processing payment on fallback service: {}", ex.getMessage());
                     processPayment(paymentRequest);
                     return null;
                 });
@@ -77,13 +77,13 @@ public class PaymentProcessorClient {
     private void postToDefault(PaymentRequest paymentRequest) {
         paymentRequest.setDefaultTrue();
         restTemplate.postForEntity(defaultUrl, paymentRequest, PaymentResponse.class);
-        storage.store(paymentRequest);
+        repository.store(paymentRequest);
     }
 
     private void postToFallback(PaymentRequest paymentRequest) {
         paymentRequest.setDefaultFalse();
         restTemplate.postForEntity(fallbackUrl, paymentRequest, PaymentResponse.class);
-        storage.store(paymentRequest);
+        repository.store(paymentRequest);
     }
 
     record PaymentResponse(String message) {
