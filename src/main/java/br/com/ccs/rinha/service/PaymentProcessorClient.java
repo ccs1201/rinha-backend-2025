@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.concurrent.ExecutorService;
+
 @Service
 public class PaymentProcessorClient {
 
@@ -17,10 +19,12 @@ public class PaymentProcessorClient {
     private final RestTemplate restTemplate;
     private final String defaultUrl;
     private final String fallbackUrl;
+    private final ExecutorService executorService;
 
     public PaymentProcessorClient(
             PaymentRepository paymentRepository,
             RestTemplate restTemplate,
+            ExecutorService executorService,
             @Value("${payment-processor.default.url}") String defaultUrl,
             @Value("${payment-processor.fallback.url}") String fallbackUrl) {
 
@@ -29,12 +33,22 @@ public class PaymentProcessorClient {
         this.defaultUrl = defaultUrl.concat("/payments");
         this.fallbackUrl = fallbackUrl.concat("/payments");
         this.restTemplate = restTemplate;
+        this.executorService = executorService;
+
 
         log.info("Default service URL: {}", this.defaultUrl);
         log.info("Fallback fallback URL: {}", this.fallbackUrl);
     }
 
     public void processPayment(PaymentRequest paymentRequest) {
+        processPaymentWithRetry(paymentRequest, 0);
+    }
+
+    private void processPaymentWithRetry(PaymentRequest paymentRequest, int retryCount) {
+        if (retryCount >= 3) {
+            log.error("Max retries reached for payment {}", paymentRequest.correlationId);
+            return;
+        }
 
         try {
             postToDefault(paymentRequest);
@@ -42,18 +56,8 @@ public class PaymentProcessorClient {
             try {
                 postToFallback(paymentRequest);
             } catch (RestClientException ex) {
-                sleep();
-                processPayment(paymentRequest);
+                executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
             }
-
-        }
-    }
-
-    private static void sleep() {
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 

@@ -6,11 +6,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,10 +19,10 @@ public class RedisPaymentRepository implements PaymentRepository {
     private final Object summaryLock = new Object();
     private static final String DEFAULT_PAYMENTS = "default:payments";
     private static final String FALLBACK_PAYMENTS = "fallback:payments";
-    private final AtomicReference<BigDecimal> defaultAmount = new AtomicReference<>(BigDecimal.ZERO);
-    private final AtomicReference<BigDecimal> fallbackAmount = new AtomicReference<>(BigDecimal.ZERO);
-    private final AtomicLong defaultCount = new AtomicLong(0L);
-    private final AtomicLong fallbackCount = new AtomicLong(0L);
+    private static final String DEFAULT_COUNT = "default:count";
+    private static final String FALLBACK_COUNT = "fallback:count";
+    private static final String DEFAULT_AMOUNT = "default:amount";
+    private static final String FALLBACK_AMOUNT = "fallback:amount";
     private final int currentYear = LocalDate.now().getYear();
 
     public RedisPaymentRepository(RedisTemplate<String, String> redisTemplate) {
@@ -45,14 +44,14 @@ public class RedisPaymentRepository implements PaymentRepository {
     public void store(PaymentRequest request) {
 
         if (request.isDefault) {
-            defaultCount.incrementAndGet();
-            defaultAmount.updateAndGet(total -> total.add(request.amount));
+            redisTemplate.opsForValue().increment(DEFAULT_COUNT);
+            redisTemplate.opsForValue().increment(DEFAULT_AMOUNT, request.amount.doubleValue());
             redisTemplate
                     .opsForZSet()
                     .add(DEFAULT_PAYMENTS, request.correlationId + ":" + request.amount, request.requestedAt.toEpochSecond());
         } else {
-            fallbackCount.incrementAndGet();
-            fallbackAmount.updateAndGet(total -> total.add(request.amount));
+            redisTemplate.opsForValue().increment(FALLBACK_COUNT);
+            redisTemplate.opsForValue().increment(FALLBACK_AMOUNT, request.amount.doubleValue());
             redisTemplate
                     .opsForZSet()
                     .add(FALLBACK_PAYMENTS, request.correlationId + ":" + request.amount, request.requestedAt.toEpochSecond());
@@ -62,14 +61,24 @@ public class RedisPaymentRepository implements PaymentRepository {
     @Override
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
 
-        if (currentYear > from.getYear() && currentYear < to.getYear()) {
+        if (from.getYear() < currentYear && to.getYear() > currentYear) {
+            String defaultCountStr = redisTemplate.opsForValue().get(DEFAULT_COUNT);
+            String fallbackCountStr = redisTemplate.opsForValue().get(FALLBACK_COUNT);
+            String defaultAmountStr = redisTemplate.opsForValue().get(DEFAULT_AMOUNT);
+            String fallbackAmountStr = redisTemplate.opsForValue().get(FALLBACK_AMOUNT);
+
+            long defCount = defaultCountStr != null ? Long.parseLong(defaultCountStr) : 0;
+            long fallCount = fallbackCountStr != null ? Long.parseLong(fallbackCountStr) : 0;
+            BigDecimal defAmount = defaultAmountStr != null ? BigDecimal.valueOf(Double.parseDouble(defaultAmountStr)) : BigDecimal.ZERO;
+            BigDecimal fallAmount = fallbackAmountStr != null ? BigDecimal.valueOf(Double.parseDouble(fallbackAmountStr)) : BigDecimal.ZERO;
+
             return new PaymentSummary(
-                    new Summary(defaultCount.get(), defaultAmount.get()),
-                    new Summary(fallbackCount.get(), fallbackAmount.get()));
+                    new Summary(defCount, defAmount.setScale(2, RoundingMode.FLOOR)),
+                    new Summary(fallCount, fallAmount.setScale(2, RoundingMode.FLOOR)));
         }
 
-        long fromTimestamp = from != null ? from.toEpochSecond() : Long.MIN_VALUE;
-        long toTimestamp = to != null ? to.toEpochSecond() : Long.MAX_VALUE;
+        long fromTimestamp = from.toEpochSecond();
+        long toTimestamp = to.toEpochSecond();
 
         synchronized (summaryLock) {
             var defaultPayments = redisTemplate.opsForZSet().rangeByScore(DEFAULT_PAYMENTS, fromTimestamp, toTimestamp);
@@ -100,5 +109,9 @@ public class RedisPaymentRepository implements PaymentRepository {
     public void purge() {
         redisTemplate.delete(DEFAULT_PAYMENTS);
         redisTemplate.delete(FALLBACK_PAYMENTS);
+        redisTemplate.delete(DEFAULT_COUNT);
+        redisTemplate.delete(FALLBACK_COUNT);
+        redisTemplate.delete(DEFAULT_AMOUNT);
+        redisTemplate.delete(FALLBACK_AMOUNT);
     }
 }

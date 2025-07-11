@@ -15,9 +15,9 @@ REM Build da imagem Podman
 podman build -f PodmanFile -t ccs1201/rinha-backend-2025:latest .
 
 REM Subir Payment Processors
-podman compose -f docker-compose.yml up -d --remove-orphans
+podman compose -f docker-compose-payment-processor.yml up -d --remove-orphans
 
 REM Subir aplicação
-podman compose -f docker-compose-app.yml up -d
+podman compose -f docker-compose.yml up -d
 
 echo Aplicacao rodando na porta 9999

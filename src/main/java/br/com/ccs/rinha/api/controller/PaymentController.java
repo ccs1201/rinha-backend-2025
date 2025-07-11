@@ -6,13 +6,11 @@ import br.com.ccs.rinha.service.PaymentRepository;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
@@ -58,12 +56,6 @@ public class PaymentController {
         repository.purge();
         log.info("Payments purged");
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/check-status")
-    @ResponseStatus(HttpStatus.OK)
-    public void check() {
-        log.info("OK");
     }
 
     @PreDestroy
