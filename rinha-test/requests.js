@@ -119,9 +119,11 @@ export async function resetBackendDatabase() {
 
 export async function getBackendPaymentsSummary(from, to) {
 
+    const requestTime = new Date().toISOString();
     const response = await backendHttp.asyncGet(`/payments-summary?from=${from}&to=${to}`);
 
     if (response.status != 200) {
+        console.error(`[${requestTime}] Erro ao obter payments summary: from=${from}&to=${to} (HTTP ${response.status})`);
         exec.test.abort(`Erro ao obter admin payments summary do backend (HTTP ${response.status}).`);
     }
 
@@ -130,6 +132,12 @@ export async function getBackendPaymentsSummary(from, to) {
 
 export async function requestBackendPayment(payload) {
 
+    const requestTime = new Date().toISOString();
     const response = await backendHttp.asyncPost('/payments', JSON.stringify(payload));
+    
+    if (response.status === 0 || response.status >= 400) {
+        console.error(`[${requestTime}] Erro ao criar payment: correlationId=${payload.correlationId} (HTTP ${response.status})`);
+    }
+    
     return response;
 }

@@ -26,19 +26,18 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - INSTANCE_NAME=app2
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=75
-      - STORAGE=redis
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx100m -Xms80m -XX:MaxMetaspaceSize=60m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
+      - redis-host=redis
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=70m -XX:+HeapDumpOnOutOfMemoryError
     networks:
       - backend
       - payment-processor
     deploy:
       resources:
         limits:
-          cpus: "0.7"
-          memory: "130MB"
+          cpus: "0.65"
+          memory: "140MB"
 
   app2:
     image: ccs1201/rinha-backend-2025:latest
@@ -49,24 +48,24 @@ services:
       - "8081:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - INSTANCE_NAME=app2
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=75
-      - STORAGE=redis
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx100m -Xms80m -XX:MaxMetaspaceSize=60m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=9011 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
+      - redis-host=redis
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=70m -XX:+HeapDumpOnOutOfMemoryError
     networks:
       - backend
       - payment-processor
     deploy:
       resources:
         limits:
-          cpus: "0.7"
-          memory: "130MB"
+          cpus: "0.65"
+          memory: "140MB"
 
   redis:
     image: redis:7-alpine
-    container_name: redis-storage
-    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru --save ""
+    container_name: redis
+    hostname: redis
+    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru --save "" --tcp-keepalive 60 --timeout 0
     ports:
       - "6379:6379"
     networks:
@@ -75,7 +74,7 @@ services:
       resources:
         limits:
           cpus: "0.1"
-          memory: "60MB"
+          memory: "40MB"
 
 networks:
   backend:

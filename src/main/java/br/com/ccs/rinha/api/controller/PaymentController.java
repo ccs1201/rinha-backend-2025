@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 public class PaymentController {
@@ -28,31 +26,29 @@ public class PaymentController {
 
     private final PaymentProcessorClient client;
     private final PaymentRepository repository;
-    private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
-    private final AtomicInteger createCount = new AtomicInteger(0);
-    private final AtomicInteger summaryCount = new AtomicInteger(0);
+    private final ExecutorService executor;
 
-    public PaymentController(PaymentProcessorClient client, PaymentRepository repository) {
+    public PaymentController(PaymentProcessorClient client, PaymentRepository repository, ExecutorService executor) {
         this.client = client;
         this.repository = repository;
+        this.executor = executor;
     }
 
     @PostMapping("/payments")
     public void createPayment(@RequestBody PaymentRequest paymentRequest) {
-        createCount.incrementAndGet();
         CompletableFuture.runAsync(() -> {
             paymentRequest.requestedAt = OffsetDateTime.now();
             client.processPayment(paymentRequest);
-        }, virtualExecutor);
+        }, executor);
     }
 
     @GetMapping("/payments-summary")
     public PaymentRepository.PaymentSummary getPaymentsSummary(@RequestParam OffsetDateTime from,
                                                                @RequestParam OffsetDateTime to) {
-        summaryCount.incrementAndGet();
+        log.info("Starting payments summary from {} to {}", from, to);
         long start = System.currentTimeMillis();
         var summary = repository.getSummary(from, to);
-        log.info("Got aggregated payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
+        log.info("Got payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
         return summary;
     }
 
@@ -60,8 +56,6 @@ public class PaymentController {
     public ResponseEntity<Void> purgePayments() {
         log.info("Purging payments");
         repository.purge();
-        createCount.set(0);
-        summaryCount.set(0);
         log.info("Payments purged");
         return ResponseEntity.ok().build();
     }
@@ -74,12 +68,7 @@ public class PaymentController {
 
     @PreDestroy
     public void shutdown() {
-        virtualExecutor.shutdown();
-    }
-
-    @GetMapping("/stats")
-    public String getStats() {
-        return String.format(" createCount: %d %n summaryCount: %d", createCount.get(), summaryCount.get());
+        executor.shutdownNow();
     }
 
 }
