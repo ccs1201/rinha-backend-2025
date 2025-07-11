@@ -1,74 +1,79 @@
-x-service-templates:
-  payment-processor: &payment-processor
-    image: zanfranceschi/payment-processor:amd64-20250707101540
-    networks:
-      - payment-processor
-    deploy:
-      resources:
-        limits:
-          cpus: "1.5"
-          memory: "100MB"
-  
-  payment-processor-db: &payment-processor-db
-    image: postgres:17-alpine
-    networks:
-      - payment-processor
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=rinha
-    deploy:
-      resources:
-        limits:
-          cpus: "1.5"
-          memory: "250MB"
-
 services:
-  payment-processor-1:
-    <<: *payment-processor
-    container_name: payment-processor-default
-    hostname: payment-processor-default
-    environment:
-      - TRANSACTION_FEE=0.05
-      - RATE_LIMIT_SECONDS=5
-      - INITIAL_TOKEN=123
-      - DB_CONNECTION_STRING=Host=payment-processor-default-db;Port=5432;Database=rinha;Username=postgres;Password=postgres;Minimum Pool Size=15;Maximum Pool Size=20;Connection Pruning Interval=3
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
-      - 8001:8080
+      - "9999:9999"
     depends_on:
-      - payment-processor-db-1
-    
-  payment-processor-db-1:
-    <<: *payment-processor-db
-    container_name: payment-processor-default-db
-    hostname: payment-processor-default-db
-    ports:
-      - 54321:5432
+      - app1
+      - app2
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: "30MB"
 
-  payment-processor-2:
-    <<: *payment-processor
-    container_name: payment-processor-fallback
-    hostname: payment-processor-fallback
+  app1:
+    image: ccs1201/rinha-backend-2025:latest
+    container_name: backend-api1
+    hostname: app1
+    ports:
+      - "8080:8080"
     environment:
-      - TRANSACTION_FEE=0.15
-      - RATE_LIMIT_SECONDS=5
-      - INITIAL_TOKEN=123
-      - DB_CONNECTION_STRING=Host=payment-processor-fallback-db;Port=5432;Database=rinha;Username=postgres;Password=postgres;Minimum Pool Size=15;Maximum Pool Size=20;Connection Pruning Interval=3
+      - SERVER_PORT=8080
+      - THREAD_POOL_SIZE=15
+      - REDIS-HOST=redis
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=70m -XX:+HeapDumpOnOutOfMemoryError
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "0.65"
+          memory: "140MB"
+
+  app2:
+    image: ccs1201/rinha-backend-2025:latest
+    container_name: backend-api2
+    hostname: app2
     ports:
-      - 8002:8080
-    depends_on:
-      - payment-processor-db-2
-  
-  payment-processor-db-2:
-    <<: *payment-processor-db
-    container_name: payment-processor-fallback-db
-    hostname: payment-processor-fallback-db
+      - "8081:8080"
+    environment:
+      - SERVER_PORT=8080
+      - THREAD_POOL_SIZE=15
+      - REDIS-HOST=redis
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=70m -XX:+HeapDumpOnOutOfMemoryError
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "0.65"
+          memory: "140MB"
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    hostname: redis
+    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru --save "" --tcp-keepalive 60 --timeout 0
     ports:
-      - 54322:5432
+      - "6379:6379"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: "40MB"
 
 networks:
-  payment-processor:
-    name: payment-processor
+  backend:
     driver: bridge
+  payment-processor:
+    external: true
