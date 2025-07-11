@@ -2,11 +2,12 @@ package br.com.ccs.rinha.service;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Set;
@@ -15,8 +16,9 @@ import java.util.stream.Collectors;
 @Service
 public class RedisPaymentRepository implements PaymentRepository {
 
+    private static final Logger log = LoggerFactory.getLogger(RedisPaymentRepository.class);
+
     private final RedisTemplate<String, String> redisTemplate;
-    private final Object summaryLock = new Object();
     private static final String DEFAULT_PAYMENTS = "default:payments";
     private static final String FALLBACK_PAYMENTS = "fallback:payments";
     private static final String DEFAULT_COUNT = "default:count";
@@ -62,25 +64,13 @@ public class RedisPaymentRepository implements PaymentRepository {
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
 
         if (from.getYear() < currentYear && to.getYear() > currentYear) {
-            String defaultCountStr = redisTemplate.opsForValue().get(DEFAULT_COUNT);
-            String fallbackCountStr = redisTemplate.opsForValue().get(FALLBACK_COUNT);
-            String defaultAmountStr = redisTemplate.opsForValue().get(DEFAULT_AMOUNT);
-            String fallbackAmountStr = redisTemplate.opsForValue().get(FALLBACK_AMOUNT);
-
-            long defCount = defaultCountStr != null ? Long.parseLong(defaultCountStr) : 0;
-            long fallCount = fallbackCountStr != null ? Long.parseLong(fallbackCountStr) : 0;
-            BigDecimal defAmount = defaultAmountStr != null ? BigDecimal.valueOf(Double.parseDouble(defaultAmountStr)) : BigDecimal.ZERO;
-            BigDecimal fallAmount = fallbackAmountStr != null ? BigDecimal.valueOf(Double.parseDouble(fallbackAmountStr)) : BigDecimal.ZERO;
-
-            return new PaymentSummary(
-                    new Summary(defCount, defAmount.setScale(2, RoundingMode.FLOOR)),
-                    new Summary(fallCount, fallAmount.setScale(2, RoundingMode.FLOOR)));
+            log.info("Getting full summary may be inconsistent until the end of async payment process");
+            return getFullSummary();
         }
 
         long fromTimestamp = from.toEpochSecond();
         long toTimestamp = to.toEpochSecond();
 
-        synchronized (summaryLock) {
             var defaultPayments = redisTemplate.opsForZSet().rangeByScore(DEFAULT_PAYMENTS, fromTimestamp, toTimestamp);
             var fallbackPayments = redisTemplate.opsForZSet().rangeByScore(FALLBACK_PAYMENTS, fromTimestamp, toTimestamp);
 
@@ -88,7 +78,23 @@ public class RedisPaymentRepository implements PaymentRepository {
             var fallbackSummary = calculateSummary(fallbackPayments);
 
             return new PaymentSummary(defaultSummary, fallbackSummary);
-        }
+    }
+
+    private PaymentSummary getFullSummary() {
+
+        String defaultCountStr = redisTemplate.opsForValue().get(DEFAULT_COUNT);
+        String fallbackCountStr = redisTemplate.opsForValue().get(FALLBACK_COUNT);
+        String defaultAmountStr = redisTemplate.opsForValue().get(DEFAULT_AMOUNT);
+        String fallbackAmountStr = redisTemplate.opsForValue().get(FALLBACK_AMOUNT);
+
+        long defCount = defaultCountStr != null ? Long.parseLong(defaultCountStr) : 0;
+        long fallCount = fallbackCountStr != null ? Long.parseLong(fallbackCountStr) : 0;
+        BigDecimal defAmount = defaultAmountStr != null ? new BigDecimal(defaultAmountStr) : BigDecimal.ZERO;
+        BigDecimal fallAmount = fallbackAmountStr != null ? new BigDecimal(fallbackAmountStr) : BigDecimal.ZERO;
+
+        return new PaymentSummary(
+                new Summary(defCount, defAmount),
+                new Summary(fallCount, fallAmount));
     }
 
     private Summary calculateSummary(Set<String> payments) {
