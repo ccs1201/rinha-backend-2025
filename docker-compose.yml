@@ -25,7 +25,6 @@ services:
       - "9010:9010"
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=75
       - redis-host=redis
@@ -47,7 +46,6 @@ services:
       - "9011:9011"
       - "8081:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=75
       - redis-host=redis
