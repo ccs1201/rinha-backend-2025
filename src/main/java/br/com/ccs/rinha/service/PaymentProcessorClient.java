@@ -64,12 +64,12 @@ public class PaymentProcessorClient {
     private void postToDefault(PaymentRequest paymentRequest) {
         paymentRequest.setDefaultTrue();
         restTemplate.postForObject(defaultUrl, paymentRequest, Object.class);
-        repository.store(paymentRequest);
+        repository.save(paymentRequest);
     }
 
     private void postToFallback(PaymentRequest paymentRequest) {
         paymentRequest.setDefaultFalse();
         restTemplate.postForObject(fallbackUrl, paymentRequest, Object.class);
-        repository.store(paymentRequest);
+        repository.save(paymentRequest);
     }
 }

@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 
 public interface PaymentRepository {
     
-    void store(PaymentRequest request);
+    void save(PaymentRequest request);
     
     PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to);
     

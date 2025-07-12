@@ -60,7 +60,7 @@ public class PaymentController {
 
     @PreDestroy
     public void shutdown() {
-        if(executor.isShutdown()) return;
+        if (executor.isShutdown()) return;
         executor.shutdownNow();
     }
 

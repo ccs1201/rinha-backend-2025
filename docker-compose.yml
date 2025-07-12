@@ -21,13 +21,18 @@ services:
     image: ccs1201/rinha-backend-2025:latest
     container_name: backend-api1
     hostname: app1
+    depends_on:
+      - backend-db
     ports:
       - "8080:8080"
     environment:
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=15
       - REDIS-HOST=redis
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=70m -XX:+HeapDumpOnOutOfMemoryError
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/rinha
+      - SPRING_DATASOURCE_USERNAME=rinha
+      - SPRING_DATASOURCE_PASSWORD=rinha
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=50m -XX:+HeapDumpOnOutOfMemoryError
     networks:
       - backend
       - payment-processor
@@ -41,13 +46,18 @@ services:
     image: ccs1201/rinha-backend-2025:latest
     container_name: backend-api2
     hostname: app2
+    depends_on:
+      - backend-db
     ports:
       - "8081:8080"
     environment:
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=15
       - REDIS-HOST=redis
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=60m -XX:+HeapDumpOnOutOfMemoryError
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/rinha
+      - SPRING_DATASOURCE_USERNAME=rinha
+      - SPRING_DATASOURCE_PASSWORD=rinha
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=50m -XX:+HeapDumpOnOutOfMemoryError
     networks:
       - backend
       - payment-processor
@@ -57,20 +67,25 @@ services:
           cpus: "0.65"
           memory: "140MB"
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    hostname: redis
-    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru --save "" --tcp-keepalive 60 --timeout 0
+  backend-db:
+    image: postgres:17-alpine
+    container_name: postgres
+    hostname: postgres
+    environment:
+      - POSTGRES_DB=rinha
+      - POSTGRES_USER=rinha
+      - POSTGRES_PASSWORD=rinha
+    volumes:
+      - ./init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "6379:6379"
+      - "5432:5432"
     networks:
       - backend
     deploy:
       resources:
         limits:
-          cpus: "0.1"
-          memory: "40MB"
+          cpus: "1"
+          memory: "100MB"
 
 networks:
   backend:
