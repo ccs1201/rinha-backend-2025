@@ -47,7 +47,7 @@ services:
       - SERVER_PORT=8080
       - THREAD_POOL_SIZE=15
       - REDIS-HOST=redis
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=70m -XX:+HeapDumpOnOutOfMemoryError
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=60m -XX:+HeapDumpOnOutOfMemoryError
     networks:
       - backend
       - payment-processor
