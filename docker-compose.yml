@@ -1,3 +1,30 @@
+x-service-templates:
+  app: &app
+  #  build:
+  #    context: .
+  #    dockerfile: Dockerfile
+    image: ccs1201/rinha-backend-2025:latest
+    depends_on:
+      - backend-db
+    environment:
+      - server.port=8080
+      - thread_pol_size=15
+      - thread_queue_size=20000
+      - server.undertow.threads.worker=30
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/rinha
+      - SPRING_DATASOURCE_USERNAME=rinha
+      - SPRING_DATASOURCE_PASSWORD=rinha
+      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms70m -XX:MaxMetaspaceSize=45m -XX:TieredStopAtLevel=1 -XX:+TieredCompilation -Djava.security.egd=file:/dev/./urandom
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "0.65"
+          memory: "100MB"
+
+
 services:
   nginx:
     image: nginx:alpine
@@ -18,54 +45,18 @@ services:
           memory: "30MB"
 
   app1:
-    image: ccs1201/rinha-backend-2025:latest
+    <<: *app
     container_name: backend-api1
     hostname: app1
-    depends_on:
-      - backend-db
     ports:
       - "8080:8080"
-    environment:
-      - SERVER_PORT=8080
-      - THREAD_POOL_SIZE=15
-      - REDIS-HOST=redis
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/rinha
-      - SPRING_DATASOURCE_USERNAME=rinha
-      - SPRING_DATASOURCE_PASSWORD=rinha
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=50m -XX:+HeapDumpOnOutOfMemoryError
-    networks:
-      - backend
-      - payment-processor
-    deploy:
-      resources:
-        limits:
-          cpus: "0.65"
-          memory: "140MB"
 
   app2:
-    image: ccs1201/rinha-backend-2025:latest
+    <<: *app
     container_name: backend-api2
     hostname: app2
-    depends_on:
-      - backend-db
     ports:
       - "8081:8080"
-    environment:
-      - SERVER_PORT=8080
-      - THREAD_POOL_SIZE=15
-      - REDIS-HOST=redis
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/rinha
-      - SPRING_DATASOURCE_USERNAME=rinha
-      - SPRING_DATASOURCE_PASSWORD=rinha
-      - JAVA_OPTS=-Dlogging.level.root=warn -Dspring.threads.virtual.enabled=false -XX:+UseSerialGC -Xmx70m -Xms60m -XX:MaxMetaspaceSize=50m -XX:+HeapDumpOnOutOfMemoryError
-    networks:
-      - backend
-      - payment-processor
-    deploy:
-      resources:
-        limits:
-          cpus: "0.65"
-          memory: "140MB"
 
   backend-db:
     image: postgres:17-alpine
@@ -76,7 +67,7 @@ services:
       - POSTGRES_USER=rinha
       - POSTGRES_PASSWORD=rinha
     volumes:
-      - ./init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql/init-backend-db.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     networks:
@@ -85,7 +76,7 @@ services:
       resources:
         limits:
           cpus: "1"
-          memory: "100MB"
+          memory: "120MB"
 
 networks:
   backend:

@@ -1,6 +1,8 @@
 package br.com.ccs.rinha.service;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -14,6 +16,7 @@ import java.time.OffsetDateTime;
 @Repository
 public class JdbcPaymentRepository implements PaymentRepository {
 
+    private static final Logger log = LoggerFactory.getLogger(JdbcPaymentRepository.class);
     private final DataSource dataSource;
 
     public JdbcPaymentRepository(DataSource dataSource) {
@@ -78,6 +81,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
+            log.info("Payments purged");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

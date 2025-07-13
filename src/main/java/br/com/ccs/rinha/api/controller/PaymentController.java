@@ -54,8 +54,11 @@ public class PaymentController {
     public ResponseEntity<Void> purgePayments() {
         log.info("Purging payments");
         repository.purge();
-        log.info("Payments purged");
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/check")
+    public void check() {
     }
 
     @PreDestroy

@@ -4,9 +4,9 @@
 
 ## Stack Tecnológica
 * **Java 24** - JVM com otimizações mais recentes
-* **Spring Boot 3.5.3** - Framework web reativo
+* **Spring Boot 3.5.3** - Framework web com JDBC puro
 * **Undertow** - Web server de alta performance
-* **Redis 7** - Storage principal com Sorted Sets
+* **PostgreSQL 15** - Storage principal com índices otimizados
 * **Nginx** - Load balancer
 * **Docker** - Containerização e orquestração
 
@@ -14,7 +14,7 @@
 
 ### **Componentes**
 ```
-k6 Tests → Nginx → [App1, App2] → Redis
+k6 Tests → Nginx → [App1, App2] → PostgreSQL
                 ↓
         Load Balancing
 ```
@@ -25,15 +25,17 @@ k6 Tests → Nginx → [App1, App2] → Redis
 - `POST /purge-payments` - Limpeza do storage
 
 ### **Otimizações Implementadas**
-- **Async Processing**: POSTs não bloqueantes
-- **Redis Optimization**: Contadores para ranges amplos
-- **Memory Tuning**: Heap 70MB + Metaspace 70MB
-- **Connection Pooling**: Lettuce com conexões compartilhadas
+- **Async Processing**: POSTs não bloqueantes com CompletableFuture
+- **JDBC Puro**: Sem overhead de ORM
+- **Índices Otimizados**: Clustered e covering indexes
+- **JIT Warmup**: Aquecimento automático da JVM
+- **Memory Tuning**: Heap 70MB + Metaspace 45MB
+- **Connection Pooling**: HikariCP otimizado
 
 ### **Performance**
-- **Throughput**: ~1200 requests/segundo
-- **Latência**: p99 < 100ms
-- **Recursos**: 1.5 CPU + 350MB RAM total
+- **Throughput**: ~1500 requests/segundo
+- **Latência**: p99 < 1ms (após warmup)
+- **Recursos**: 1.5 CPU + 300MB RAM total
 - **Concorrência**: Até 1000 VUs simultâneos
 
 ## Como Executar
@@ -42,7 +44,11 @@ k6 Tests → Nginx → [App1, App2] → Redis
 # Build e start
 docker-compose up --build
 
-# Executar testes
+# ⚠️ IMPORTANTE: Aguardar warmup completar
+# Logs mostrarão: "Application warming up wait...."
+# Até aparecer: "Application warmup completed"
+
+# Executar testes (após warmup)
 cd rinha-test
 k6 run rinha.js
 ```
@@ -55,9 +61,9 @@ k6 run rinha.js
 
 ## Technology Stack
 * **Java 24** - JVM with latest optimizations
-* **Spring Boot 3.5.3** - Reactive web framework
+* **Spring Boot 3.5.3** - Web framework with pure JDBC
 * **Undertow** - High-performance web server
-* **Redis 7** - Primary storage with Sorted Sets
+* **PostgreSQL 15** - Primary storage with optimized indexes
 * **Nginx** - Load balancer
 * **Docker** - Containerization and orchestration
 
@@ -65,7 +71,7 @@ k6 run rinha.js
 
 ### **Components**
 ```
-k6 Tests → Nginx → [App1, App2] → Redis
+k6 Tests → Nginx → [App1, App2] → PostgreSQL
                 ↓
         Load Balancing
 ```
@@ -76,15 +82,17 @@ k6 Tests → Nginx → [App1, App2] → Redis
 - `POST /purge-payments` - Storage cleanup
 
 ### **Implemented Optimizations**
-- **Async Processing**: Non-blocking POSTs
-- **Redis Optimization**: Counters for wide ranges
-- **Memory Tuning**: 70MB Heap + 70MB Metaspace
-- **Connection Pooling**: Lettuce with shared connections
+- **Async Processing**: Non-blocking POSTs with CompletableFuture
+- **Pure JDBC**: No ORM overhead
+- **Optimized Indexes**: Clustered and covering indexes
+- **JIT Warmup**: Automatic JVM warm-up
+- **Memory Tuning**: 70MB Heap + 45MB Metaspace
+- **Connection Pooling**: Optimized HikariCP
 
 ### **Performance**
-- **Throughput**: ~1200 requests/second
-- **Latency**: p99 < 100ms
-- **Resources**: 1.5 CPU + 350MB RAM total
+- **Throughput**: ~1500 requests/second
+- **Latency**: p99 < 1ms (after warmup)
+- **Resources**: 1.5 CPU + 300MB RAM total
 - **Concurrency**: Up to 1000 simultaneous VUs
 
 ## How to Run
@@ -93,7 +101,11 @@ k6 Tests → Nginx → [App1, App2] → Redis
 # Build and start
 docker-compose up --build
 
-# Run tests
+# ⚠️ IMPORTANT: Wait for warmup to complete
+# Logs will show: "Application warming up wait...."
+# Until: "Application warmup completed"
+
+# Run tests (after warmup)
 cd rinha-test
 k6 run rinha.js
 ```

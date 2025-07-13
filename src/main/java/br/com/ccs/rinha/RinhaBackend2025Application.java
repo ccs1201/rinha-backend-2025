@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class RinhaBackend2025Application {
 
     public static void main(String[] args) {
-        SpringApplication.run(RinhaBackend2025Application.class, args);
+        SpringApplication app = new SpringApplication(RinhaBackend2025Application.class);
+        app.setLogStartupInfo(false);
+        app.setRegisterShutdownHook(false);
+        app.run(args);
     }
-
 }

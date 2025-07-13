@@ -17,7 +17,7 @@ public final class PaymentRequest {
     }
 
     public PaymentRequest(UUID correlationId, BigDecimal amount) {
-        this(correlationId, amount, OffsetDateTime.now(), true);
+        this(correlationId, amount, null, true);
     }
 
     public PaymentRequest(UUID correlationId, BigDecimal amount, OffsetDateTime requestedAt, boolean isDefault) {
@@ -35,4 +35,13 @@ public final class PaymentRequest {
         this.isDefault = true;
     }
 
+    @Override
+    public String toString() {
+        return "PaymentRequest{" +
+                "correlationId=" + correlationId +
+                ", amount=" + amount +
+                ", requestedAt=" + requestedAt +
+                ", isDefault=" + isDefault +
+                '}';
+    }
 }

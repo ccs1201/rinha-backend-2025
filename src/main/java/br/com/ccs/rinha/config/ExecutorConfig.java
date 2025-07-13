@@ -17,13 +17,16 @@ public class ExecutorConfig {
     private final Logger log = LoggerFactory.getLogger(ExecutorConfig.class);
 
     @Bean
-    public ExecutorService executorService(@Value("${THREAD_POOL_SIZE:10}") int threadPoolSize) {
+    public ExecutorService executorService(@Value("${thread_pol_size:15}") int threadPoolSize,
+                                           @Value("${thread_queue_size:20_000}") int queueSize) {
         log.info("Thread pool size: {}", threadPoolSize);
+        log.info("Thread pool Queue size {}", queueSize);
+
         return new ThreadPoolExecutor(
-            threadPoolSize,
-            threadPoolSize,
-            0L, TimeUnit.MILLISECONDS,
-            new ArrayBlockingQueue<>(30_000, true)
+                threadPoolSize,
+                threadPoolSize,
+                0L, TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(queueSize, true)
         );
     }
 
