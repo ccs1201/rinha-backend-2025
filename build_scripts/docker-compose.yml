@@ -20,7 +20,7 @@ x-backend-templates:
     server.port: "8080"
     thread_pool_size: "15"
     thread_queue_size: "20000"
-    warmup_rounds: "10000"
+    warmup_rounds: "5000"
     server.undertow.threads.io: "2"
     server.undertow.threads.worker: "30"
     spring.datasource.hikari.minimum-idle: "10"
@@ -28,7 +28,7 @@ x-backend-templates:
     SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/rinha"
     SPRING_DATASOURCE_USERNAME: "rinha"
     SPRING_DATASOURCE_PASSWORD: "rinha"
-    JAVA_OPTS: "-Dlogging.level.root=error -Dspring.threads.virtual.enabled=true -Xmx95m -Xms95m -XX:MaxMetaspaceSize=50m -XX:+UseSerialGC -XX:+TieredCompilation -XX:TieredStopAtLevel=4 -XX:CompileThreshold=10"
+    JAVA_OPTS: "-Dlogging.level.root=off -Dspring.threads.virtual.enabled=true -Xmx95m -Xms95m -XX:MaxMetaspaceSize=50m -XX:+UseSerialGC"
 
 services:
   nginx:

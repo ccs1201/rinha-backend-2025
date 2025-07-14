@@ -52,9 +52,9 @@ public class WarmupConfig {
     private void run(RestTemplate restTemplate, int serverPort, int warmupRounds, long start) {
         CompletableFuture.runAsync(() -> {
             var executorService = Executors.newFixedThreadPool(60, Thread.ofVirtual().factory());
-            waitForServer(restTemplate, serverPort);
+            waitForServer(restTemplate);
             log.info("Application Warmup started wait termination...");
-            var msg = "Warming up...";
+            var msg = new StringBuilder("Warming up...");
 
             var running = CompletableFuture.runAsync(() -> {
                 var futures = warm(restTemplate, executorService, warmupRounds);
@@ -62,10 +62,10 @@ public class WarmupConfig {
             }, Executors.newVirtualThreadPerTaskExecutor());
 
             while (!running.isDone()) {
-                msg = msg + " .";
+                msg = msg.append( " .");
                 System.out.println(msg);
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     log.error("Warmup interrupted", e);
                     Thread.currentThread().interrupt();
@@ -138,7 +138,7 @@ public class WarmupConfig {
                 Object.class, from, to);
     }
 
-    private void waitForServer(RestTemplate restTemplate, int port) {
+    private void waitForServer(RestTemplate restTemplate) {
         int attempts = 0;
         while (attempts < 15) {
             log.info("Waiting for server to be ready... attempt {}", attempts);
