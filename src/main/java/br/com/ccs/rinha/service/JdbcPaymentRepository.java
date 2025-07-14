@@ -3,6 +3,7 @@ package br.com.ccs.rinha.service;
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -17,18 +18,31 @@ import java.time.OffsetDateTime;
 public class JdbcPaymentRepository implements PaymentRepository {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcPaymentRepository.class);
+    private static final String SQL_INSERT = "INSERT INTO payments (correlation_id, amount, requested_at, is_default) VALUES (?, ?, ?, ?)";
+    private static final String SQL_SUMMARY = """
+            SELECT 
+                SUM(CASE WHEN is_default = true THEN 1 ELSE 0 END) as default_count,
+                SUM(CASE WHEN is_default = true THEN amount ELSE 0 END) as default_amount,
+                SUM(CASE WHEN is_default = false THEN 1 ELSE 0 END) as fallback_count,
+                SUM(CASE WHEN is_default = false THEN amount ELSE 0 END) as fallback_amount
+            FROM payments 
+            WHERE requested_at >= ? AND requested_at <= ?
+            """;
     private final DataSource dataSource;
 
-    public JdbcPaymentRepository(DataSource dataSource) {
+    public JdbcPaymentRepository(DataSource dataSource,
+                                 @Value("${spring.datasource.hikari.maximum-pool-size}") int poolSize,
+                                 @Value("${spring.datasource.hikari.minimum-idle}") int minIdle) {
         this.dataSource = dataSource;
+        log.info("JDBC Pool size: {}", poolSize);
+        log.info("JDBC Min Idle: {}", minIdle);
     }
 
     @Override
     public void save(PaymentRequest request) {
-        String sql = "INSERT INTO payments (correlation_id, amount, requested_at, is_default) VALUES (?, ?, ?, ?)";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
             stmt.setObject(1, request.correlationId);
             stmt.setBigDecimal(2, request.amount);
             stmt.setObject(3, request.requestedAt);
@@ -42,18 +56,8 @@ public class JdbcPaymentRepository implements PaymentRepository {
 
     @Override
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
-        String sql = """
-                SELECT 
-                    SUM(CASE WHEN is_default = true THEN 1 ELSE 0 END) as default_count,
-                    SUM(CASE WHEN is_default = true THEN amount ELSE 0 END) as default_amount,
-                    SUM(CASE WHEN is_default = false THEN 1 ELSE 0 END) as fallback_count,
-                    SUM(CASE WHEN is_default = false THEN amount ELSE 0 END) as fallback_amount
-                FROM payments 
-                WHERE requested_at >= ? AND requested_at <= ?
-                """;
-
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(SQL_SUMMARY)) {
 
             stmt.setObject(1, from);
             stmt.setObject(2, to);
@@ -81,7 +85,6 @@ public class JdbcPaymentRepository implements PaymentRepository {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
-            log.info("Payments purged");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

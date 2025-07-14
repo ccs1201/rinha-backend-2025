@@ -6,10 +6,14 @@ docker-compose -f docker-compose.yml down --remove-orphans
 docker container prune -f
 
 # Build da aplicação
+cd ..
 ./mvnw clean package -DskipTests
 
+
 # Build da imagem Docker
-docker buildx build -f Dockerfile-local -t ccs1201/rinha-backend-2025:latest .
+docker buildx build -f build_scripts/Dockerfile-local -t ccs1201/rinha-backend-2025-jdbc:latest .
+
+cd build_scripts/
 
 # Subir Payment Processors
 docker-compose -f docker-compose-payment-processor.yml up -d

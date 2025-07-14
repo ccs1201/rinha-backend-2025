@@ -17,7 +17,7 @@ public class ExecutorConfig {
     private final Logger log = LoggerFactory.getLogger(ExecutorConfig.class);
 
     @Bean
-    public ExecutorService executorService(@Value("${thread_pol_size:15}") int threadPoolSize,
+    public ExecutorService executorService(@Value("${thread_pool_size:15}") int threadPoolSize,
                                            @Value("${thread_queue_size:20_000}") int queueSize) {
         log.info("Thread pool size: {}", threadPoolSize);
         log.info("Thread pool Queue size {}", queueSize);
