@@ -15,12 +15,12 @@ services:
       resources:
         limits:
           cpus: "0.1"
-          memory: "30MB"
+          memory: "15MB"
 
   app1:
     image: ccs1201/rinha-backend-2025:latest
     container_name: backend-api1
-    hostname: app1
+    hostname: backend-api1
     ports:
       - "8080:8080"
     environment:
@@ -40,7 +40,7 @@ services:
   app2:
     image: ccs1201/rinha-backend-2025:latest
     container_name: backend-api2
-    hostname: app2
+    hostname: backend-api2
     ports:
       - "8081:8080"
     environment:
@@ -70,7 +70,7 @@ services:
       resources:
         limits:
           cpus: "0.1"
-          memory: "40MB"
+          memory: "55MB"
 
 networks:
   backend:
