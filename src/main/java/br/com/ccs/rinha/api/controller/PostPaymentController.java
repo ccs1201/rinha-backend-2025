@@ -9,6 +9,7 @@ import jakarta.inject.Named;
 import org.slf4j.Logger;
 
 import java.time.OffsetDateTime;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 @Endpoint("/payments")
@@ -28,8 +29,10 @@ public class PostPaymentController {
 
     @Endpoint.POST
     public void createPayment(PaymentRequest paymentRequest) {
-        paymentRequest.requestedAt = OffsetDateTime.now();
-        client.processPayment(paymentRequest);
+        CompletableFuture.runAsync(() -> {
+            paymentRequest.requestedAt = OffsetDateTime.now();
+            client.processPayment(paymentRequest);
+        });
     }
 
     @PreDestroy

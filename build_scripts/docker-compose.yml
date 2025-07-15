@@ -16,8 +16,8 @@ x-backend-templates:
           memory: "117.50MB"
 
   app-env: &app-env
-    payment-processor-default-url: "payment-processor-default:8001"
-    payment-processor-fallback-url: "payment-processor-fallback:8002"
+    payment-processor-default-url: "http://payment-processor-default:8001"
+    payment-processor-fallback-url: "http://payment-processor-fallback:8002"
     warmup: "true"
     server.port: "8080"
     thread-pool-size: "15"
