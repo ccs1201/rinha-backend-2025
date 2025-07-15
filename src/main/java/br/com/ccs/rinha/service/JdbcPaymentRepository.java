@@ -2,9 +2,8 @@ package br.com.ccs.rinha.service;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.config.RinhaDataSource;
-import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 
 import javax.sql.DataSource;
@@ -15,8 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 
-@Singleton
-@Default
+@ApplicationScoped
 public class JdbcPaymentRepository implements PaymentRepository {
 
     private final Logger log;
@@ -42,6 +40,8 @@ public class JdbcPaymentRepository implements PaymentRepository {
 
     @Override
     public void save(PaymentRequest request) {
+
+        log.info("Saving payment: {}", request);
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {

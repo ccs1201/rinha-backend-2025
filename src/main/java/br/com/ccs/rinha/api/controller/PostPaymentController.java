@@ -30,7 +30,6 @@ public class PostPaymentController {
     public void createPayment(PaymentRequest paymentRequest) {
         paymentRequest.requestedAt = OffsetDateTime.now();
         client.processPayment(paymentRequest);
-        log.info("Payment created: {}", paymentRequest);
     }
 
     @PreDestroy

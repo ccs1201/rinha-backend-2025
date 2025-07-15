@@ -1,8 +1,8 @@
 package br.com.ccs.rinha.config;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
-import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,13 +11,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-@Singleton
+@ApplicationScoped
 public class ExecutorConfig {
 
     private final Logger log = LoggerFactory.getLogger(ExecutorConfig.class);
 
     @Produces
-    @Singleton
     @Named("paymentProcessorExecutor")
     public ExecutorService executorService() {
 

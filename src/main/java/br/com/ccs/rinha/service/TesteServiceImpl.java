@@ -1,10 +1,8 @@
 package br.com.ccs.rinha.service;
 
-import jakarta.enterprise.inject.Default;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 
-@Singleton
-@Default
+@ApplicationScoped
 public class TesteServiceImpl implements TesteService{
 
     @Override

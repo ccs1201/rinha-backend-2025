@@ -3,16 +3,18 @@ package br.com.ccs.rinha.config;
 import br.com.ccs.rinha.exception.DatasourceException;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 
 import javax.sql.DataSource;
 import java.util.Objects;
 
-@Singleton
+import static java.util.Objects.*;
+
+@ApplicationScoped
 public class DataSourceConfig {
 
     private final Logger log;
@@ -23,7 +25,6 @@ public class DataSourceConfig {
     }
 
     @Produces
-    @Singleton
     @RinhaDataSource
     public DataSource createDataSource() {
         String minIdleEnv = System.getenv("datasource-minimum-idle");
@@ -61,16 +62,16 @@ public class DataSourceConfig {
     }
 
     private void validate(String dataSourceUrl, String datasourceUsername, String dataSourcePassword, String dataSourceClassName) {
-        if (Objects.isNull(dataSourceUrl) || dataSourceUrl.isBlank()) {
+        if (isNull(dataSourceUrl) || dataSourceUrl.isBlank()) {
             throw new DatasourceException("Data Source URL must not be null");
         }
-        if (Objects.isNull(datasourceUsername) || datasourceUsername.isBlank()) {
+        if (isNull(datasourceUsername) || datasourceUsername.isBlank()) {
             throw new DatasourceException("Data Source Username must not be null");
         }
-        if (Objects.isNull(dataSourcePassword) || dataSourcePassword.isBlank()) {
+        if (isNull(dataSourcePassword) || dataSourcePassword.isBlank()) {
             throw new DatasourceException("Data Source Password must not be null");
         }
-        if (Objects.isNull(dataSourceClassName) || dataSourceClassName.isBlank()) {
+        if (isNull(dataSourceClassName) || dataSourceClassName.isBlank()) {
             throw new DatasourceException("Data Source Class Name must not be null");
         }
     }
