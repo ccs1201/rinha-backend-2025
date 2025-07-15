@@ -11,7 +11,7 @@ cd ..
 
 
 # Build da imagem Docker
-docker buildx build -f build_scripts/Dockerfile-local -t ccs1201/rinha-backend-2025-jdbc:latest .
+docker buildx build -f build_scripts/Dockerfile-local -t ccs1201/rinha-backend-2025-ccs-boot:latest .
 
 cd build_scripts/
 

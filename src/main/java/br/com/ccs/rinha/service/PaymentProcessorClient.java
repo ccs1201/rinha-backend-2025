@@ -1,40 +1,39 @@
 package br.com.ccs.rinha.service;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
+import br.com.ccs.rinha.exception.HttpClientException;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.ExecutorService;
 
-@Service
+@Singleton
 public class PaymentProcessorClient {
 
-    private static final Logger log = LoggerFactory.getLogger(PaymentProcessorClient.class);
-
+    private final Logger log;
     private final PaymentRepository repository;
-    private final RestTemplate restTemplate;
-    private final String defaultUrl;
-    private final String fallbackUrl;
+    private String defaultUrl;
+    private String fallbackUrl;
     private final ExecutorService executorService;
 
+    @Inject
     public PaymentProcessorClient(
             PaymentRepository paymentRepository,
-            RestTemplate restTemplate,
-            ExecutorService executorService,
-            @Value("${payment-processor.default.url}") String defaultUrl,
-            @Value("${payment-processor.fallback.url}") String fallbackUrl) {
+            @Named("paymentProcessorExecutor") ExecutorService executorService, Logger log) {
 
         this.repository = paymentRepository;
-
+        this.log = log;
+        this.defaultUrl = System.getenv("payment-processor-default-url");
         this.defaultUrl = defaultUrl.concat("/payments");
+        this.fallbackUrl = System.getenv("payment-processor-fallback-url");
         this.fallbackUrl = fallbackUrl.concat("/payments");
-        this.restTemplate = restTemplate;
         this.executorService = executorService;
-
 
         log.info("Default service URL: {}", this.defaultUrl);
         log.info("Fallback fallback URL: {}", this.fallbackUrl);
@@ -52,10 +51,10 @@ public class PaymentProcessorClient {
 
         try {
             postToDefault(paymentRequest);
-        } catch (RestClientException e) {
+        } catch (HttpClientException e) {
             try {
                 postToFallback(paymentRequest);
-            } catch (RestClientException ex) {
+            } catch (HttpClientException ex) {
                 executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
             }
         }
@@ -63,13 +62,27 @@ public class PaymentProcessorClient {
 
     private void postToDefault(PaymentRequest paymentRequest) {
         paymentRequest.setDefaultTrue();
-        restTemplate.postForObject(defaultUrl, paymentRequest, Object.class);
-        repository.save(paymentRequest);
+        doRequestAsync(URI.create(defaultUrl), paymentRequest);
     }
 
     private void postToFallback(PaymentRequest paymentRequest) {
         paymentRequest.setDefaultFalse();
-        restTemplate.postForObject(fallbackUrl, paymentRequest, Object.class);
+        doRequestAsync(URI.create(fallbackUrl), paymentRequest);
         repository.save(paymentRequest);
+    }
+
+    private void doRequestAsync(URI uri, Object body) throws HttpClientException {
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(String.valueOf(body)))
+                    .timeout(java.time.Duration.ofMillis(1500))
+                    .build();
+
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            throw new HttpClientException(e);
+        }
     }
 }

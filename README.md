@@ -4,9 +4,10 @@
 
 ## Stack Tecnológica
 * **Java 24** - JVM com otimizações mais recentes
-* **Spring Boot 3.5.3** - Framework web com JDBC puro
+* **CCS-Boot 0.0.6** - Framework customizado baseado em CDI/Weld
 * **Undertow** - Web server de alta performance
 * **PostgreSQL 15** - Storage principal com índices otimizados
+* **HikariCP** - Pool de conexões otimizado
 * **Nginx** - Load balancer
 * **Docker** - Containerização e orquestração
 
@@ -25,12 +26,13 @@ k6 Tests → Nginx → [App1, App2] → PostgreSQL
 - `POST /purge-payments` - Limpeza do storage
 
 ### **Otimizações Implementadas**
+- **Framework Customizado**: CCS-Boot com CDI/Weld para injeção de dependência
 - **Async Processing**: POSTs não bloqueantes com CompletableFuture
-- **JDBC Puro**: Sem overhead de ORM
-- **Índices Otimizados**: Clustered e covering indexes
-- **JIT Warmup**: Aquecimento automático da JVM
-- **Memory Tuning**: Heap 70MB + Metaspace 45MB
-- **Connection Pooling**: HikariCP otimizado
+- **JDBC Puro**: Sem overhead de ORM, apenas HikariCP
+- **Índices Otimizados**: Clustered e covering indexes no PostgreSQL
+- **JIT Warmup**: Aquecimento automático da JVM simulando carga real
+- **Memory Tuning**: Heap 90MB + Metaspace 50MB otimizado
+- **CDI Container**: Weld para gerenciamento de beans e lifecycle
 
 ### **Performance**
 - **Throughput**: ~1500 requests/segundo
@@ -61,9 +63,10 @@ k6 run rinha.js
 
 ## Technology Stack
 * **Java 24** - JVM with latest optimizations
-* **Spring Boot 3.5.3** - Web framework with pure JDBC
+* **CCS-Boot 0.0.6** - Custom framework based on CDI/Weld
 * **Undertow** - High-performance web server
 * **PostgreSQL 15** - Primary storage with optimized indexes
+* **HikariCP** - Optimized connection pool
 * **Nginx** - Load balancer
 * **Docker** - Containerization and orchestration
 
@@ -82,12 +85,13 @@ k6 Tests → Nginx → [App1, App2] → PostgreSQL
 - `POST /purge-payments` - Storage cleanup
 
 ### **Implemented Optimizations**
+- **Custom Framework**: CCS-Boot with CDI/Weld for dependency injection
 - **Async Processing**: Non-blocking POSTs with CompletableFuture
-- **Pure JDBC**: No ORM overhead
-- **Optimized Indexes**: Clustered and covering indexes
-- **JIT Warmup**: Automatic JVM warm-up
-- **Memory Tuning**: 70MB Heap + 45MB Metaspace
-- **Connection Pooling**: Optimized HikariCP
+- **Pure JDBC**: No ORM overhead, only HikariCP
+- **Optimized Indexes**: Clustered and covering indexes on PostgreSQL
+- **JIT Warmup**: Automatic JVM warm-up simulating real load
+- **Memory Tuning**: 90MB Heap + 50MB Metaspace optimized
+- **CDI Container**: Weld for bean management and lifecycle
 
 ### **Performance**
 - **Throughput**: ~1500 requests/second

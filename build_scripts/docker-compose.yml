@@ -3,7 +3,7 @@ x-backend-templates:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ccs1201/rinha-backend-2025-jdbc:latest
+    image: ccs1201/rinha-backend-2025-ccs-boot:latest
     depends_on:
       - backend-db
     networks:
@@ -16,18 +16,20 @@ x-backend-templates:
           memory: "117.50MB"
 
   app-env: &app-env
+    payment-processor-default-url: "payment-processor-default:8001"
+    payment-processor-fallback-url: "payment-processor-fallback:8002"
     warmup: "true"
     server.port: "8080"
-    thread_pool_size: "15"
-    thread_queue_size: "20000"
+    thread-pool-size: "15"
+    thread-queue-size: "20000"
     warmup_rounds: "5000"
-    server.undertow.threads.io: "2"
-    server.undertow.threads.worker: "30"
-    spring.datasource.hikari.minimum-idle: "10"
-    spring.datasource.hikari.maximum-pool-size: "10"
-    SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/rinha"
-    SPRING_DATASOURCE_USERNAME: "rinha"
-    SPRING_DATASOURCE_PASSWORD: "rinha"
+    datasource-minimum-idle: "1"
+    datasource-maximum-pool-size: "5"
+    datasource-timeout: "5000"
+    datasource-url: "jdbc:postgresql://postgres:5432/rinha"
+    datasource-username: "rinha"
+    datasource-password: "rinha"
+    datasource-class-name: "org.postgresql.Driver"
     JAVA_OPTS: "-Dlogging.level.root=off -Dspring.threads.virtual.enabled=true -Xmx95m -Xms95m -XX:MaxMetaspaceSize=50m -XX:+UseSerialGC"
 
 services:

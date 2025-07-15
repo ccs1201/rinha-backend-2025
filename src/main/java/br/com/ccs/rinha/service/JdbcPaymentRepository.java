@@ -1,10 +1,11 @@
 package br.com.ccs.rinha.service;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
+import br.com.ccs.rinha.config.RinhaDataSource;
+import jakarta.enterprise.inject.Default;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -14,10 +15,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 
-@Repository
+@Singleton
+@Default
 public class JdbcPaymentRepository implements PaymentRepository {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcPaymentRepository.class);
+    private final Logger log;
+
     private static final String SQL_INSERT = "INSERT INTO payments (correlation_id, amount, requested_at, is_default) VALUES (?, ?, ?, ?)";
     private static final String SQL_SUMMARY = """
             SELECT 
@@ -30,12 +33,11 @@ public class JdbcPaymentRepository implements PaymentRepository {
             """;
     private final DataSource dataSource;
 
-    public JdbcPaymentRepository(DataSource dataSource,
-                                 @Value("${spring.datasource.hikari.maximum-pool-size}") int poolSize,
-                                 @Value("${spring.datasource.hikari.minimum-idle}") int minIdle) {
+    @Inject
+    public JdbcPaymentRepository(@RinhaDataSource DataSource dataSource, Logger log) {
         this.dataSource = dataSource;
-        log.info("JDBC Pool size: {}", poolSize);
-        log.info("JDBC Min Idle: {}", minIdle);
+        this.log = log;
+        this.log.info("JdbcPaymentRepository initialized");
     }
 
     @Override
