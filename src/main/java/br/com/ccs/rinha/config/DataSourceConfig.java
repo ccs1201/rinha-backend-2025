@@ -3,41 +3,43 @@ package br.com.ccs.rinha.config;
 import br.com.ccs.rinha.exception.DatasourceException;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Disposes;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Inject;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.util.Objects;
 
-import static java.util.Objects.*;
+import static java.util.Objects.isNull;
 
-@ApplicationScoped
+
 public class DataSourceConfig {
 
-    private final Logger log;
+    private static final Logger log = LoggerFactory.getLogger(DataSourceConfig.class);
+    private static final DataSource instance;
 
-    @Inject
-    public DataSourceConfig(Logger log) {
-        this.log = log;
+    static {
+        instance = initDataSource();
     }
 
-    @Produces
-    @RinhaDataSource
-    public DataSource createDataSource() {
-        String minIdleEnv = System.getenv("datasource-minimum-idle");
-        String maxPoolEnv = System.getenv("datasource-maximum-pool-size");
-        String timeoutEnv = System.getenv("datasource-timeout");
+    private DataSourceConfig() {
+    }
 
-        int minIdle = minIdleEnv == null ? 10 : Integer.parseInt(minIdleEnv);
-        int maxPoolSize = maxPoolEnv == null ? 10 : Integer.parseInt(maxPoolEnv);
-        int dataSourceTimeout = timeoutEnv == null ? 5000 : Integer.parseInt(timeoutEnv);
-        String dataSourceUrl = System.getenv("datasource-url");
-        String datasourceUsername = System.getenv("datasource-username");
-        String dataSourcePassword = System.getenv("datasource-password");
-        String dataSourceClassName = System.getenv("datasource-class-name");
+    public static DataSource getInstance() {
+        return instance;
+    }
+
+    private static DataSource initDataSource() {
+        String minIdleEnv = System.getenv("datasource-minimum-idle").trim();
+        String maxPoolEnv = System.getenv("datasource-maximum-pool-size").trim();
+        String timeoutEnv = System.getenv("datasource-timeout").trim();
+
+        int minIdle = minIdleEnv.isBlank() ? 10 : Integer.parseInt(minIdleEnv);
+        int maxPoolSize = maxPoolEnv.isBlank() ? 10 : Integer.parseInt(maxPoolEnv);
+        int dataSourceTimeout = timeoutEnv.isBlank() ? 5000 : Integer.parseInt(timeoutEnv);
+
+        String dataSourceUrl = System.getenv("datasource-url").trim();
+        String datasourceUsername = System.getenv("datasource-username").trim();
+        String dataSourcePassword = System.getenv("datasource-password").trim();
+        String dataSourceClassName = System.getenv("datasource-class-name").trim();
 
         log.info("Data Source URL: {}", dataSourceUrl);
         log.info("Data Source Username: {}", datasourceUsername);
@@ -57,11 +59,14 @@ public class DataSourceConfig {
         config.setMaximumPoolSize(maxPoolSize);
         config.setConnectionTimeout(dataSourceTimeout);
         config.setDriverClassName(dataSourceClassName);
+        config.setAutoCommit(true);
+        config.setConnectionTestQuery("select 1 where 1=1");
+        log.info("Data Source Configured {}", config);
 
         return new HikariDataSource(config);
     }
 
-    private void validate(String dataSourceUrl, String datasourceUsername, String dataSourcePassword, String dataSourceClassName) {
+    private static void validate(String dataSourceUrl, String datasourceUsername, String dataSourcePassword, String dataSourceClassName) {
         if (isNull(dataSourceUrl) || dataSourceUrl.isBlank()) {
             throw new DatasourceException("Data Source URL must not be null");
         }
@@ -73,12 +78,6 @@ public class DataSourceConfig {
         }
         if (isNull(dataSourceClassName) || dataSourceClassName.isBlank()) {
             throw new DatasourceException("Data Source Class Name must not be null");
-        }
-    }
-
-    public void close(@Disposes @RinhaDataSource DataSource dataSource) {
-        if (dataSource instanceof HikariDataSource hikari) {
-            hikari.close();
         }
     }
 }

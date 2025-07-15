@@ -1,8 +1,5 @@
 package br.com.ccs.rinha.config;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,30 +8,38 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-@ApplicationScoped
 public class ExecutorConfig {
 
-    private final Logger log = LoggerFactory.getLogger(ExecutorConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(ExecutorConfig.class);
+    private static ExecutorService instance;
 
-    @Produces
-    @Named("paymentProcessorExecutor")
-    public ExecutorService executorService() {
+    static {
+        configure();
+    }
 
-        String threadPoolSizeStr = System.getenv("THREAD_POOL_SIZE");
-        String queueSizeStr = System.getenv("THREAD_QUEUE_SIZE");
-        
-        int threadPoolSize = threadPoolSizeStr != null ? Integer.parseInt(threadPoolSizeStr) : 10;
-        int queueSize = queueSizeStr != null ? Integer.parseInt(queueSizeStr) : 100;
+    private ExecutorConfig() {
+    }
+
+    public static ExecutorService getExecutor() {
+        return instance;
+    }
+
+    private static void configure() {
+
+        String threadPoolSizeStr = System.getenv("thread-pool-size").trim();
+        String queueSizeStr = System.getenv("thread-queue-size").trim();
+
+        int threadPoolSize = threadPoolSizeStr.isBlank() ? 10 : Integer.parseInt(threadPoolSizeStr);
+        int queueSize = queueSizeStr.isBlank() ? 100 : Integer.parseInt(queueSizeStr);
 
         log.info("Thread pool size: {}", threadPoolSize);
         log.info("Thread pool Queue size {}", queueSize);
 
-        return new ThreadPoolExecutor(
+        ExecutorConfig.instance = new ThreadPoolExecutor(
                 threadPoolSize,
                 threadPoolSize,
                 10, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(queueSize, true)
-        );
+                new ArrayBlockingQueue<>(queueSize, true),
+                new ThreadPoolExecutor.CallerRunsPolicy());
     }
-
 }

@@ -1,10 +1,9 @@
 package br.com.ccs.rinha.service;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
-import br.com.ccs.rinha.config.RinhaDataSource;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import br.com.ccs.rinha.config.DataSourceConfig;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -14,10 +13,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 
-@ApplicationScoped
+
 public class JdbcPaymentRepository implements PaymentRepository {
 
-    private final Logger log;
+    private static final Logger log = LoggerFactory.getLogger(JdbcPaymentRepository.class);
+    private static JdbcPaymentRepository instance;
+    private static DataSource dataSource;
 
     private static final String SQL_INSERT = "INSERT INTO payments (correlation_id, amount, requested_at, is_default) VALUES (?, ?, ?, ?)";
     private static final String SQL_SUMMARY = """
@@ -29,19 +30,24 @@ public class JdbcPaymentRepository implements PaymentRepository {
             FROM payments 
             WHERE requested_at >= ? AND requested_at <= ?
             """;
-    private final DataSource dataSource;
 
-    @Inject
-    public JdbcPaymentRepository(@RinhaDataSource DataSource dataSource, Logger log) {
-        this.dataSource = dataSource;
-        this.log = log;
-        this.log.info("JdbcPaymentRepository initialized");
+    static {
+        JdbcPaymentRepository.init();
+    }
+
+    public static PaymentRepository getInstance() {
+        return instance;
+    }
+
+
+    private static void init() {
+        dataSource = DataSourceConfig.getInstance();
+        log.info("JdbcPaymentRepository initialized");
+        instance = new JdbcPaymentRepository();
     }
 
     @Override
     public void save(PaymentRequest request) {
-
-        log.info("Saving payment: {}", request);
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
@@ -49,7 +55,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
             stmt.setBigDecimal(2, request.amount);
             stmt.setObject(3, request.requestedAt);
             stmt.setBoolean(4, request.isDefault);
-            stmt.executeUpdate();
+            stmt.execute();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
