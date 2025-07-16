@@ -2,26 +2,29 @@ package br.com.ccs.rinha.api.handler;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.config.ExecutorConfig;
-import br.com.ccs.rinha.config.ObjectMapperFactory;
 import br.com.ccs.rinha.exception.HandlerException;
+import br.com.ccs.rinha.httpclient.VertexPaymentProcessor;
 import br.com.ccs.rinha.repository.JdbcPaymentRepository;
-import br.com.ccs.rinha.service.PaymentProcessorClient;
 import br.com.ccs.rinha.repository.PaymentRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import br.com.ccs.rinha.service.PaymentProcessorClient;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 public class Handler implements HttpHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(Handler.class);
+
     private static PaymentProcessorClient paymentProcessorClient;
     private static PaymentRepository paymentRepository;
-    private static ObjectMapper objectMapper;
     private static Executor executor;
 
     private final String postPaymentURI = "/payments";
@@ -42,8 +45,7 @@ public class Handler implements HttpHandler {
 
     private Handler() {
         paymentRepository = JdbcPaymentRepository.getInstance();
-        paymentProcessorClient = PaymentProcessorClient.getInstance();
-        objectMapper = ObjectMapperFactory.getInstance();
+        paymentProcessorClient = VertexPaymentProcessor.getInstance();//PaymentProcessorClient.getInstance();
         executor = ExecutorConfig.getExecutor();
     }
 
@@ -56,8 +58,9 @@ public class Handler implements HttpHandler {
                 if (requestURI.equals(postPaymentURI)) {
                     CompletableFuture.runAsync(() -> {
                         try {
-                            paymentProcessorClient.processPayment(objectMapper.readValue(data, PaymentRequest.class));
+                            paymentProcessorClient.processPayment(PaymentRequest.of(data));
                         } catch (Exception e) {
+                            log.error(e.getMessage(), e);
                             throw new HandlerException(e);
                         }
                     }, executor);
@@ -72,16 +75,19 @@ public class Handler implements HttpHandler {
                     ex.getResponseHeaders().put(responseContentType, "application/json");
                     ex.getResponseSender()
                             .send(ByteBuffer
-                                    .wrap(objectMapper
-                                            .writeValueAsBytes(paymentRepository.getSummary(from, to))));
-
+                                    .wrap(paymentRepository.getSummary(from, to).toJson().getBytes(StandardCharsets.UTF_8)));
                 }
 
                 if (requestURI.equals(postPurgePaymentsURI)) {
                     paymentRepository.purge();
+                    paymentProcessorClient.failedPaymentsCounter.set(0);
                     ex.setStatusCode(200);
                     ex.getResponseSender().send(emptyResnpose);
                 }
+                if (requestURI.equals("/faileds")) {
+                    ex.getResponseSender().send("" + paymentProcessorClient.failedPaymentsCounter.get());
+                }
+
             } catch (Exception e) {
                 throw new HandlerException(e);
             }

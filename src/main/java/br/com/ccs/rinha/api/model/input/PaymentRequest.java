@@ -1,6 +1,7 @@
 package br.com.ccs.rinha.api.model.input;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -9,28 +10,7 @@ public final class PaymentRequest {
     public BigDecimal amount;
     public OffsetDateTime requestedAt;
     public boolean isDefault;
-    private static final String json_pattern = """
-            {
-            "correlationId": "%s",
-            "amount": %s,
-            "requestedAt": "%s"
-            }""";
-
-    private String json;
-
-    public PaymentRequest() {
-    }
-
-    public PaymentRequest(UUID correlationId, BigDecimal amount) {
-        this(correlationId, amount, null, true);
-    }
-
-    public PaymentRequest(UUID correlationId, BigDecimal amount, OffsetDateTime requestedAt, boolean isDefault) {
-        this.correlationId = correlationId;
-        this.amount = amount;
-        this.requestedAt = requestedAt;
-        this.isDefault = isDefault;
-    }
+    public String json;
 
     public void setDefaultFalse() {
         this.isDefault = false;
@@ -42,14 +22,30 @@ public final class PaymentRequest {
 
     public String getJson() {
         if (json == null) {
-            var sb = new StringBuilder(128);
-            sb.append("{")
-                    .append("\"correlationId\":\"").append(correlationId).append("\",")
-                    .append("\"amount\":").append(amount).append(",")
-                    .append("\"requestedAt\":\"").append(requestedAt).append("\"")
-                    .append("}");
-            json = sb.toString();
+            toJson();
         }
         return json;
+    }
+
+    public static PaymentRequest of(byte[] data) {
+        PaymentRequest request = new PaymentRequest();
+
+        request.correlationId =
+                UUID.fromString(new String(data, 18, 36, StandardCharsets.UTF_8));
+
+        request.amount = new BigDecimal(new String(data, 65, 4, StandardCharsets.UTF_8));
+        request.requestedAt = OffsetDateTime.now();
+
+        return request;
+    }
+
+    private void toJson() {
+        json = new StringBuilder(128)
+                .append("{")
+                .append("\"correlationId\":\"").append(correlationId).append("\",")
+                .append("\"amount\":").append(amount).append(",")
+                .append("\"requestedAt\":\"").append(requestedAt).append("\"")
+                .append("}")
+                .toString();
     }
 }

@@ -1,6 +1,7 @@
 package br.com.ccs.rinha.repository;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
+import br.com.ccs.rinha.api.model.output.PaymentSummary;
 import br.com.ccs.rinha.config.DataSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,9 +57,8 @@ public class JdbcPaymentRepository implements PaymentRepository {
             stmt.setObject(3, request.requestedAt);
             stmt.setBoolean(4, request.isDefault);
             stmt.execute();
-            conn.commit();
-
         } catch (SQLException e) {
+            log.error("Payment saving error.", e);
             throw new RuntimeException(e);
         }
     }
@@ -74,13 +74,13 @@ public class JdbcPaymentRepository implements PaymentRepository {
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return new PaymentSummary(
-                            new Summary(rs.getLong("default_count"),
+                            new PaymentSummary.Summary(rs.getLong("default_count"),
                                     rs.getBigDecimal("default_amount") != null ? rs.getBigDecimal("default_amount") : BigDecimal.ZERO),
-                            new Summary(rs.getLong("fallback_count"),
+                            new PaymentSummary.Summary(rs.getLong("fallback_count"),
                                     rs.getBigDecimal("fallback_amount") != null ? rs.getBigDecimal("fallback_amount") : BigDecimal.ZERO)
                     );
                 }
-                return new PaymentSummary(new Summary(0, BigDecimal.ZERO), new Summary(0, BigDecimal.ZERO));
+                return new PaymentSummary(new PaymentSummary.Summary(0, BigDecimal.ZERO), new PaymentSummary.Summary(0, BigDecimal.ZERO));
             }
 
         } catch (SQLException e) {

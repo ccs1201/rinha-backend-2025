@@ -32,6 +32,10 @@ x-backend-templates:
     warmup_rounds: "10000"
     JAVA_OPTS: "-Xmx95m -Xms95m -XX:MaxMetaspaceSize=50m -XX:+UseG1GC"
 
+
+volumes:
+  backend-db: {}
+
 services:
   nginx:
     image: nginx:alpine
@@ -78,8 +82,9 @@ services:
       POSTGRES_USER: rinha
       POSTGRES_PASSWORD: rinha
     volumes:
-      - ./init.sql/init-backend-db.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./init.sql/init-config.sh:/docker-entrypoint-initdb.d/init-config.sh
+      - ./db/init-backend-db.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/init-config.sh:/docker-entrypoint-initdb.d/init-config.sh
+      - backend-db:/var/lib/postgresql
     ports:
       - "5432:5432"
     networks:
