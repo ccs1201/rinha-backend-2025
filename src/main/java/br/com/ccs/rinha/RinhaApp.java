@@ -25,6 +25,7 @@ public class RinhaApp {
                 .setHandler(Handler.getInstance())
                 .setIoThreads(serverIOThreads)
                 .setWorkerThreads(serverWorkerThreads)
+                .setDirectBuffers(true)
                 .setBufferSize(1024 * 16 - 20)
                 .build();
         server.start();
