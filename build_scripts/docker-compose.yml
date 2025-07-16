@@ -17,8 +17,8 @@ x-backend-templates:
 
   app-env: &app-env
     datasource-class-name: "org.postgresql.Driver"
-    datasource-maximum-pool-size: "15"
-    datasource-minimum-idle: "15"
+    datasource-maximum-pool-size: "10"
+    datasource-minimum-idle: "10"
     datasource-password: "rinha"
     datasource-timeout: "2000"
     datasource-url: "jdbc:postgresql://postgres:5432/rinha"
@@ -26,11 +26,11 @@ x-backend-templates:
     payment-processor-default-url: "http://payment-processor-default:8001"
     payment-processor-fallback-url: "http://payment-processor-fallback:8002"
     server-port: "8080"
-    thread-pool-size: "30"
+    thread-pool-size: "50"
     thread-queue-size: "30000"
     warmup: "true"
-    warmup_rounds: "5000"
-    JAVA_OPTS: "-Dlogging.level.root:off -Dspring.threads.virtual.enabled:true -Xmx95m -Xms95m -XX:MaxMetaspaceSize=50m -XX:+UseG1GC"
+    warmup_rounds: "10000"
+    JAVA_OPTS: "-Xmx95m -Xms95m -XX:MaxMetaspaceSize=50m -XX:+UseG1GC"
 
 services:
   nginx:
