@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS payments
+CREATE UNLOGGED TABLE payments
 (
     correlation_id UUID           NOT NULL,
     amount         DECIMAL(10, 2) NOT NULL,
@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS payments
 CREATE INDEX idx_payments_clustered ON payments (requested_at, is_default, amount);
 -- -- Covering index for summary queries
 -- CREATE INDEX idx_payments_covering ON payments (requested_at, is_default) INCLUDE (amount);
+
+ALTER SYSTEM SET fsync = off;

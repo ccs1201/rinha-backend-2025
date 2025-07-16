@@ -1,7 +1,7 @@
-package br.com.ccs.rinha.service;
+package br.com.ccs.rinha.repository;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
-import br.com.ccs.rinha.config.DataSourceConfig;
+import br.com.ccs.rinha.config.DataSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
 
 
     private static void init() {
-        dataSource = DataSourceConfig.getInstance();
+        dataSource = DataSourceFactory.getInstance();
         log.info("JdbcPaymentRepository initialized");
         instance = new JdbcPaymentRepository();
     }
@@ -56,6 +56,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
             stmt.setObject(3, request.requestedAt);
             stmt.setBoolean(4, request.isDefault);
             stmt.execute();
+            conn.commit();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);

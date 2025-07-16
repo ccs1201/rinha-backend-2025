@@ -30,7 +30,7 @@ public class ExecutorConfig {
         String queueSizeStr = System.getenv("thread-queue-size").trim();
 
         int threadPoolSize = threadPoolSizeStr.isBlank() ? 10 : Integer.parseInt(threadPoolSizeStr);
-        int queueSize = queueSizeStr.isBlank() ? 100 : Integer.parseInt(queueSizeStr);
+        int queueSize = queueSizeStr.isBlank() ? 1000 : Integer.parseInt(queueSizeStr);
 
         log.info("Thread pool size: {}", threadPoolSize);
         log.info("Thread pool Queue size {}", queueSize);
@@ -40,6 +40,7 @@ public class ExecutorConfig {
                 threadPoolSize,
                 10, TimeUnit.SECONDS,
                 new ArrayBlockingQueue<>(queueSize, true),
-                new ThreadPoolExecutor.CallerRunsPolicy());
+                Thread.ofVirtual().factory(),
+                new ThreadPoolExecutor.DiscardPolicy());
     }
 }

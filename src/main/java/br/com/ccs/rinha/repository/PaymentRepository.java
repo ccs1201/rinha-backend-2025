@@ -1,4 +1,4 @@
-package br.com.ccs.rinha.service;
+package br.com.ccs.rinha.repository;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import com.fasterxml.jackson.annotation.JsonProperty;

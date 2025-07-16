@@ -1,9 +1,9 @@
 x-backend-templates:
   app: &app
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ccs1201/rinha-backend-2025-ccs-boot:latest
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+    image: ccs1201/rinha-backend-2025-puro:latest
     depends_on:
       - backend-db
     networks:
@@ -16,22 +16,21 @@ x-backend-templates:
           memory: "117.50MB"
 
   app-env: &app-env
-    server-port: "9999"
+    datasource-class-name: "org.postgresql.Driver"
+    datasource-maximum-pool-size: "15"
+    datasource-minimum-idle: "15"
+    datasource-password: "rinha"
+    datasource-timeout: "2000"
+    datasource-url: "jdbc:postgresql://postgres:5432/rinha"
+    datasource-username: "rinha"
     payment-processor-default-url: "http://payment-processor-default:8001"
     payment-processor-fallback-url: "http://payment-processor-fallback:8002"
+    server-port: "8080"
+    thread-pool-size: "30"
+    thread-queue-size: "30000"
     warmup: "true"
-    server.port: "8080"
-    thread-pool-size: "15"
-    thread-queue-size: "20000"
     warmup_rounds: "5000"
-    DATASOURCE_MINIMUM_IDLE: "10"
-    DATASOURCE_MAXIMUM_POOL_SIZE: "10"
-    DATASOURCE_TIMEOUT: "5000"
-    DATASOURCE_URL: "jdbc:postgresql://postgres:5432/rinha"
-    DATASOURCE_USERNAME: "rinha"
-    DATASOURCE_PASSWORD: "rinha"
-    DATASOURCE_CLASS_NAME: "org.postgresql.Driver"
-    JAVA_OPTS: "-Dlogging.level.root=off -Dspring.threads.virtual.enabled=true -Xmx95m -Xms95m -XX:MaxMetaspaceSize=50m -XX:+UseSerialGC"
+    JAVA_OPTS: "-Dlogging.level.root:off -Dspring.threads.virtual.enabled:true -Xmx95m -Xms95m -XX:MaxMetaspaceSize=50m -XX:+UseG1GC"
 
 services:
   nginx:
@@ -80,6 +79,7 @@ services:
       POSTGRES_PASSWORD: rinha
     volumes:
       - ./init.sql/init-backend-db.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql/init-config.sh:/docker-entrypoint-initdb.d/init-config.sh
     ports:
       - "5432:5432"
     networks:

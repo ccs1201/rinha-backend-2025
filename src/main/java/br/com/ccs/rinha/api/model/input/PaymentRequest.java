@@ -1,7 +1,5 @@
 package br.com.ccs.rinha.api.model.input;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -9,9 +7,16 @@ import java.util.UUID;
 public final class PaymentRequest {
     public UUID correlationId;
     public BigDecimal amount;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     public OffsetDateTime requestedAt;
     public boolean isDefault;
+    private static final String json_pattern = """
+            {
+            "correlationId": "%s",
+            "amount": %s,
+            "requestedAt": "%s"
+            }""";
+
+    private String json;
 
     public PaymentRequest() {
     }
@@ -35,13 +40,16 @@ public final class PaymentRequest {
         this.isDefault = true;
     }
 
-    @Override
-    public String toString() {
-        return "PaymentRequest{" +
-                "correlationId=" + correlationId +
-                ", amount=" + amount +
-                ", requestedAt=" + requestedAt +
-                ", isDefault=" + isDefault +
-                '}';
+    public String getJson() {
+        if (json == null) {
+            var sb = new StringBuilder(128);
+            sb.append("{")
+                    .append("\"correlationId\":\"").append(correlationId).append("\",")
+                    .append("\"amount\":").append(amount).append(",")
+                    .append("\"requestedAt\":\"").append(requestedAt).append("\"")
+                    .append("}");
+            json = sb.toString();
+        }
+        return json;
     }
 }

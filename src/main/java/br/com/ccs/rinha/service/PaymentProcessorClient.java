@@ -4,6 +4,8 @@ import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.config.ExecutorConfig;
 import br.com.ccs.rinha.config.ObjectMapperFactory;
 import br.com.ccs.rinha.exception.HttpClientException;
+import br.com.ccs.rinha.repository.JdbcPaymentRepository;
+import br.com.ccs.rinha.repository.PaymentRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,8 +61,9 @@ public class PaymentProcessorClient {
     }
 
     public void processPayment(PaymentRequest paymentRequest) {
-            paymentRequest.requestedAt = OffsetDateTime.now();
-            processPaymentWithRetry(paymentRequest, 0);
+        paymentRequest.requestedAt = OffsetDateTime.now();
+        log.info("Processing payment {}", paymentRequest.getJson());
+        processPaymentWithRetry(paymentRequest, 0);
     }
 
     private void processPaymentWithRetry(PaymentRequest paymentRequest, int retryCount) {
@@ -102,8 +105,8 @@ public class PaymentProcessorClient {
                     .header(contentType, contentTypeValue)
 //                    .header("Accept", "application/json")
                     .version(HttpClient.Version.HTTP_2)
-                    .timeout(java.time.Duration.ofMillis(100500))
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(objectMapper.writeValueAsBytes(body)))
+                    .timeout(java.time.Duration.ofMillis(1500))
+                    .POST(HttpRequest.BodyPublishers.ofString(body.getJson()))
                     .build();
 
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -112,7 +115,7 @@ public class PaymentProcessorClient {
                 log.info("Error processing payment status code: {}", response.statusCode());
                 return Boolean.FALSE;
             }
-
+            log.info("Payment processed: {}", response.body());
             return Boolean.TRUE;
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();

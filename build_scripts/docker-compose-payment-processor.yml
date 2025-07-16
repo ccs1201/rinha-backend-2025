@@ -69,6 +69,7 @@ services:
       - 54322:5432
 
 networks:
-  payment-processor:
-    name: payment-processor
+  backend:
     driver: bridge
+  payment-processor:
+    external: true
