@@ -93,7 +93,7 @@ public class VertexPaymentProcessorClient extends PaymentProcessorClient {
                         return;
                     }
                     paymentRequest.setDefaultTrue();
-                    repository.saveInBatch(paymentRequest);
+                    repository.save(paymentRequest);
 
                 })
                 .onFailure(err -> {
@@ -120,7 +120,7 @@ public class VertexPaymentProcessorClient extends PaymentProcessorClient {
                         processPaymentWithRetry(paymentRequest, retryCount);
                         return;
                     }
-                    repository.saveInBatch(paymentRequest);
+                    repository.save(paymentRequest);
                 })
                 .onFailure(err -> {
 //                    log.error("Error on fallback processor", err);

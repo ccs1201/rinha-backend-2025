@@ -114,6 +114,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
 
     @Override
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
+        insertInBatch();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_SUMMARY)) {
 
