@@ -9,7 +9,7 @@ docker container prune -f
 ./mvnw clean package -DskipTests
 
 # Build da imagem Docker
-docker buildx build -f Dockerfile-local -t ccs1201/rinha-backend-2025:latest .
+docker buildx build -f Dockerfile-local -t ccs1201/rinha-2025-redis:latest .
 
 # Subir Payment Processors
 docker-compose -f docker-compose-payment-processor.yml up -d
