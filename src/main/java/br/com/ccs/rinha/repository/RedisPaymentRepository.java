@@ -1,5 +1,6 @@
-package br.com.ccs.rinha.service;
+package br.com.ccs.rinha.repository;
 
+import br.com.ccs.rinha.api.model.output.PaymentSummary;
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -17,7 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Service
-public class RedisPaymentRepository implements PaymentRepository {
+public class RedisPaymentRepository {
 
     private static final Logger log = LoggerFactory.getLogger(RedisPaymentRepository.class);
 
@@ -50,46 +51,58 @@ public class RedisPaymentRepository implements PaymentRepository {
         }
     }
 
-    @Override
+
     public void store(PaymentRequest request) {
         var data = String.format("%s:%s:%s", request.correlationId, request.amount, request.isDefault);
 
-        if (request.isDefault) {
-            redisTemplate.opsForValue().increment(DEFAULT_COUNT);
-            redisTemplate.opsForValue().increment(DEFAULT_AMOUNT, request.amount.doubleValue());
-            redisTemplate
-                    .opsForZSet()
-                    .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
-        } else {
-            redisTemplate.opsForValue().increment(FALLBACK_COUNT);
-            redisTemplate.opsForValue().increment(FALLBACK_AMOUNT, request.amount.doubleValue());
-            redisTemplate
-                    .opsForZSet()
-                    .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
-        }
+        redisTemplate
+                .opsForZSet()
+                .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
+
+//        if (request.isDefault) {
+//            storeDefault(request, data);
+//        } else {
+//            storeFallback(request, data);
+//        }
     }
 
-    @Override
+    private void storeDefault(PaymentRequest request, String data) {
+//        redisTemplate.opsForValue().increment(DEFAULT_COUNT);
+//        redisTemplate.opsForValue().increment(DEFAULT_AMOUNT, request.amount.doubleValue());
+        redisTemplate
+                .opsForZSet()
+                .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
+    }
+
+    private void storeFallback(PaymentRequest request, String data) {
+//        redisTemplate.opsForValue().increment(FALLBACK_COUNT);
+//        redisTemplate.opsForValue().increment(FALLBACK_AMOUNT, request.amount.doubleValue());
+        redisTemplate
+                .opsForZSet()
+                .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
+    }
+
+
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
 
-        if (from.getYear() < currentYear && to.getYear() > currentYear) {
-            log.info("Getting full summary may be inconsistent until the end of async payment process");
-
-            if (!shouldShutdownImmediately) {
-                var start = System.currentTimeMillis();
-                while (((ThreadPoolExecutor) executorService).getActiveCount() > 0) {
-                    try {
-                        log.info("Waiting for async payment process to finish. Active tasks: {}", (long) ((ThreadPoolExecutor) executorService).getQueue().size());
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
-                    }
-                }
-                log.info("Async payment process finished in {}ms", System.currentTimeMillis() - start);
-            }
-            return getFullSummary();
-        }
+//        if (from.getYear() < currentYear && to.getYear() > currentYear) {
+//            log.info("Getting full summary may be inconsistent until the end of async payment process");
+//
+//            if (!shouldShutdownImmediately) {
+//                var start = System.currentTimeMillis();
+//                while (((ThreadPoolExecutor) executorService).getActiveCount() > 0) {
+//                    try {
+//                        log.info("Waiting for async payment process to finish. Active tasks: {}", (long) ((ThreadPoolExecutor) executorService).getQueue().size());
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException e) {
+//                        Thread.currentThread().interrupt();
+//                        throw new RuntimeException(e);
+//                    }
+//                }
+//                log.info("Async payment process finished in {}ms", System.currentTimeMillis() - start);
+//            }
+//            return getFullSummary();
+//        }
 
         long fromTimestamp = from.toEpochSecond();
         long toTimestamp = to.toEpochSecond();
@@ -112,13 +125,13 @@ public class RedisPaymentRepository implements PaymentRepository {
         BigDecimal fallAmount = fallbackAmountStr != null ? new BigDecimal(fallbackAmountStr) : BigDecimal.ZERO;
 
         return new PaymentSummary(
-                new Summary(defCount, defAmount.setScale(2, RoundingMode.HALF_UP)),
-                new Summary(fallCount, fallAmount.setScale(2, RoundingMode.HALF_UP)));
+                new PaymentSummary.Summary(defCount, defAmount.setScale(2, RoundingMode.HALF_UP)),
+                new PaymentSummary.Summary(fallCount, fallAmount.setScale(2, RoundingMode.HALF_UP)));
     }
 
     private PaymentSummary calculateSummary(Set<String> payments) {
         if (payments == null || payments.isEmpty()) {
-            return new PaymentSummary(new Summary(0, BigDecimal.ZERO), new Summary(0, BigDecimal.ZERO));
+            return new PaymentSummary(new PaymentSummary.Summary(0, BigDecimal.ZERO), new PaymentSummary.Summary(0, BigDecimal.ZERO));
         }
 
         long defaultCount = 0;
@@ -139,15 +152,15 @@ public class RedisPaymentRepository implements PaymentRepository {
         }
 
         return new PaymentSummary(
-                new Summary(defaultCount, defaultAmount),
-                new Summary(fallbackCount, fallbackAmount));
+                new PaymentSummary.Summary(defaultCount, defaultAmount),
+                new PaymentSummary.Summary(fallbackCount, fallbackAmount));
     }
 
-    @Override
     public void purge() {
         redisTemplate.delete(DEFAULT_COUNT);
         redisTemplate.delete(FALLBACK_COUNT);
         redisTemplate.delete(DEFAULT_AMOUNT);
         redisTemplate.delete(FALLBACK_AMOUNT);
+        redisTemplate.delete(PAYMENTS);
     }
 }

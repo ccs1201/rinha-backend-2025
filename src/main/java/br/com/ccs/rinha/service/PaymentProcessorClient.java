@@ -1,11 +1,11 @@
 package br.com.ccs.rinha.service;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
+import br.com.ccs.rinha.repository.RedisPaymentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.ExecutorService;
@@ -15,14 +15,14 @@ public class PaymentProcessorClient {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentProcessorClient.class);
 
-    private final PaymentRepository repository;
+    private final RedisPaymentRepository repository;
     private final RestTemplate restTemplate;
     private final String defaultUrl;
     private final String fallbackUrl;
     private final ExecutorService executorService;
 
     public PaymentProcessorClient(
-            PaymentRepository paymentRepository,
+            RedisPaymentRepository paymentRepository,
             RestTemplate restTemplate,
             ExecutorService executorService,
             @Value("${payment-processor.default.url}") String defaultUrl,
@@ -49,27 +49,26 @@ public class PaymentProcessorClient {
             log.error("Max retries reached for payment {}", paymentRequest.correlationId);
             return;
         }
+        postToDefault(paymentRequest, retryCount);
+    }
 
+    private void postToDefault(PaymentRequest paymentRequest, int retryCount) {
         try {
-            postToDefault(paymentRequest);
-        } catch (RestClientException e) {
-            try {
-                postToFallback(paymentRequest);
-            } catch (RestClientException ex) {
-                executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
-            }
+            paymentRequest.setDefaultTrue();
+            restTemplate.postForObject(defaultUrl, paymentRequest, Object.class);
+            repository.store(paymentRequest);
+        } catch (Exception e) {
+            postToFallback(paymentRequest, retryCount);
         }
     }
 
-    private void postToDefault(PaymentRequest paymentRequest) {
-        paymentRequest.setDefaultTrue();
-        restTemplate.postForObject(defaultUrl, paymentRequest, Object.class);
-        repository.store(paymentRequest);
-    }
-
-    private void postToFallback(PaymentRequest paymentRequest) {
-        paymentRequest.setDefaultFalse();
-        restTemplate.postForObject(fallbackUrl, paymentRequest, Object.class);
-        repository.store(paymentRequest);
+    private void postToFallback(PaymentRequest paymentRequest, int retryCount) {
+        try {
+            paymentRequest.setDefaultFalse();
+            restTemplate.postForObject(fallbackUrl, paymentRequest, Object.class);
+            repository.store(paymentRequest);
+        } catch (Exception e) {
+            executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
+        }
     }
 }

@@ -1,8 +1,9 @@
 package br.com.ccs.rinha.api.controller;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
+import br.com.ccs.rinha.api.model.output.PaymentSummary;
 import br.com.ccs.rinha.service.PaymentProcessorClient;
-import br.com.ccs.rinha.service.PaymentRepository;
+import br.com.ccs.rinha.repository.RedisPaymentRepository;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +24,10 @@ public class PaymentController {
     private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
     private final PaymentProcessorClient client;
-    private final PaymentRepository repository;
+    private final RedisPaymentRepository repository;
     private final ExecutorService executor;
 
-    public PaymentController(PaymentProcessorClient client, PaymentRepository repository, ExecutorService executor) {
+    public PaymentController(PaymentProcessorClient client, RedisPaymentRepository repository, ExecutorService executor) {
         this.client = client;
         this.repository = repository;
         this.executor = executor;
@@ -41,13 +42,12 @@ public class PaymentController {
     }
 
     @GetMapping("/payments-summary")
-    public PaymentRepository.PaymentSummary getPaymentsSummary(@RequestParam OffsetDateTime from,
-                                                               @RequestParam OffsetDateTime to) {
-        log.info("Starting payments summary from {} to {}", from, to);
-        long start = System.currentTimeMillis();
-        var summary = repository.getSummary(from, to);
-        log.info("Got payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
-        return summary;
+    public PaymentSummary getPaymentsSummary(@RequestParam OffsetDateTime from,
+                                             @RequestParam OffsetDateTime to) {
+//        log.info("Starting payments summary from {} to {}", from, to);
+//        long start = System.currentTimeMillis();
+        return repository.getSummary(from, to);
+//        log.info("Got payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
     }
 
     @PostMapping("/purge-payments")
@@ -60,7 +60,7 @@ public class PaymentController {
 
     @PreDestroy
     public void shutdown() {
-        if(executor.isShutdown()) return;
+        if (executor.isShutdown()) return;
         executor.shutdownNow();
     }
 
