@@ -111,7 +111,7 @@ public class VertexPaymentProcessorClient extends PaymentProcessorClient {
         webClient
                 .post(fallbackURI.getPort(), fallbackURI.getHost(), fallbackURI.getPath())
                 .putHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
-                .timeout(requestTimout * 3)
+                .timeout(requestTimout * 2)
                 .sendBuffer(Buffer.buffer(paymentRequest.getJson()))
                 .onSuccess(resp -> {
                     if (resp.statusCode() != 200) {
