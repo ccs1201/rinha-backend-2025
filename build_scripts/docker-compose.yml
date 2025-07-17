@@ -16,7 +16,7 @@ x-backend-templates:
           memory: "117.50MB"
 
   app-env: &app-env
-    client-processor-timeout: "5000"
+    client-processor-timeout: "1500"
     datasource-class-name: "org.postgresql.Driver"
     datasource-maximum-pool-size: "2"
     datasource-minimum-idle: "2"
@@ -30,10 +30,20 @@ x-backend-templates:
     server-io-threads: "2"
     server-workers-threads: "30"
     thread-pool-size: "1"
-    thread-queue-size: "2000"
+    thread-queue-size: "200"
     warmup: "true"
-    warmup_rounds: "10000"
-    JAVA_OPTS: "-Xmx95m -Xms95m -XX:MaxMetaspaceSize=35m -XX:+UseG1GC"
+    warmup_rounds: "5000"
+    JAVA_OPTS: "\
+    -Xmx95m \
+    -Xms95m \
+    -XX:MaxMetaspaceSize=35m \
+    -XX:+UseG1GC \
+    -XX:+TieredCompilation \
+    -XX:TieredStopAtLevel=4 \
+    -XX:CompileThreshold=1000 \
+    -XX:+UnlockDiagnosticVMOptions \
+    -XX:+PrintCompilation"
+#    -XX:+PrintInlining"
 
 
 volumes:

@@ -6,11 +6,11 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public final class PaymentRequest {
-    public UUID correlationId;
-    public BigDecimal amount;
-    public OffsetDateTime requestedAt;
+    public final UUID correlationId;
+    public final BigDecimal amount = new BigDecimal("19.9");
+    public final OffsetDateTime requestedAt;
     public boolean isDefault;
-    public String json;
+    public final String json;
 
     public void setDefaultFalse() {
         this.isDefault = false;
@@ -20,27 +20,29 @@ public final class PaymentRequest {
         this.isDefault = true;
     }
 
+    public PaymentRequest(UUID correlationId, OffsetDateTime requestedAt) {
+        this.correlationId = correlationId;
+        this.requestedAt = requestedAt;
+        this.json = this.toJson();
+    }
+
     public String getJson() {
-        if (json == null) {
-            toJson();
-        }
         return json;
     }
 
     public static PaymentRequest of(byte[] data) {
-        PaymentRequest request = new PaymentRequest();
 
-        request.correlationId =
+        var correlationId =
                 UUID.fromString(new String(data, 18, 36, StandardCharsets.UTF_8));
 
-        request.amount = new BigDecimal(new String(data, 65, 4, StandardCharsets.UTF_8));
-        request.requestedAt = OffsetDateTime.now();
+//        var amount = new BigDecimal(19.9);//new BigDecimal(new String(data, 65, 4, StandardCharsets.UTF_8));
+//        request.requestedAt = OffsetDateTime.now();
 
-        return request;
+        return new PaymentRequest(correlationId, OffsetDateTime.now());
     }
 
-    private void toJson() {
-        json = new StringBuilder(128)
+    private String toJson() {
+        return new StringBuilder(128)
                 .append("{")
                 .append("\"correlationId\":\"").append(correlationId).append("\",")
                 .append("\"amount\":").append(amount).append(",")

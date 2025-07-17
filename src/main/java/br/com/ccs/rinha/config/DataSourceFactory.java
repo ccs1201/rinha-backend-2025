@@ -14,7 +14,7 @@ import static java.util.Objects.isNull;
 public class DataSourceFactory {
 
     private static final Logger log = LoggerFactory.getLogger(DataSourceFactory.class);
-    private static final DataSource instance;
+    private static DataSource instance;
 
     static {
         instance = initDataSource();

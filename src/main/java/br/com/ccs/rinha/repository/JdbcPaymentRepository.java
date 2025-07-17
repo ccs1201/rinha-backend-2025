@@ -15,10 +15,9 @@ import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 
-public class JdbcPaymentRepository implements PaymentRepository {
+public final class JdbcPaymentRepository {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcPaymentRepository.class);
     private static JdbcPaymentRepository instance;
@@ -41,7 +40,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
         JdbcPaymentRepository.init();
     }
 
-    public static PaymentRepository getInstance() {
+    public static JdbcPaymentRepository getInstance() {
         return instance;
     }
 
@@ -52,7 +51,6 @@ public class JdbcPaymentRepository implements PaymentRepository {
         instance = new JdbcPaymentRepository();
     }
 
-    @Override
     public void save(PaymentRequest request) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
@@ -68,7 +66,6 @@ public class JdbcPaymentRepository implements PaymentRepository {
         }
     }
 
-    @Override
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_SUMMARY)) {
@@ -93,7 +90,6 @@ public class JdbcPaymentRepository implements PaymentRepository {
         }
     }
 
-    @Override
     public void purge() {
         String sql = "DELETE FROM payments";
         try (Connection conn = dataSource.getConnection();

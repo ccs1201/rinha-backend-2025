@@ -1,11 +1,13 @@
-package br.com.ccs.rinha.httpclient;
+package br.com.ccs.rinha.paymentprocessorclient;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.config.ExecutorConfig;
-import br.com.ccs.rinha.service.PaymentProcessorClient;
+import br.com.ccs.rinha.config.PaymentProcessorClientVars;
+import br.com.ccs.rinha.repository.JdbcPaymentRepository;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +16,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class VertexPaymentProcessorClient extends PaymentProcessorClient {
+public final class VertexPaymentProcessorClient {
 
     private static final Logger log = LoggerFactory.getLogger(VertexPaymentProcessorClient.class);
     private final ArrayBlockingQueue<PaymentRequest> queue;
@@ -22,27 +24,28 @@ public class VertexPaymentProcessorClient extends PaymentProcessorClient {
     private static final WebClient webClient = WebClient.create(vertx);
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String CONTENT_TYPE_VALUE = "application/json";
-    private static VertexPaymentProcessorClient instance;
-    private final AtomicInteger failedAttemptsDefault = new AtomicInteger(0);
-    private final AtomicInteger failedAttemptsFallback = new AtomicInteger(0);
-    private final AtomicInteger failedStatuscodeAttempts = new AtomicInteger(0);
+    private static final AtomicInteger failedAttemptsDefault = new AtomicInteger(0);
+    private static final AtomicInteger failedAttemptsFallback = new AtomicInteger(0);
+    private static final AtomicInteger failedStatuscodeAttempts = new AtomicInteger(0);
+    private static final AtomicInteger failedRetryAttempsts = new AtomicInteger(0);
+    private final PaymentProcessorClientVars vars;
+    private final JdbcPaymentRepository repository;
 
+    private static final VertexPaymentProcessorClient instance = new VertexPaymentProcessorClient();
 
-    public static VertexPaymentProcessorClient getInstance() {
-        if (instance == null) {
-            instance = new VertexPaymentProcessorClient();
-        }
-        return instance;
-    }
-
-    public VertexPaymentProcessorClient() {
+    private VertexPaymentProcessorClient() {
         super();
         var queueSize = Integer.parseInt(System.getenv("thread-queue-size").trim());
         this.queue = new ArrayBlockingQueue<>(queueSize, false);
+        vars = PaymentProcessorClientVars.getInstance();
+        this.repository = JdbcPaymentRepository.getInstance();
         startProcessQueue();
     }
 
-    @Override
+    public static VertexPaymentProcessorClient getInstance() {
+        return instance;
+    }
+
     public void processPayment(PaymentRequest paymentRequest) {
         var accepted = queue.offer(paymentRequest);
         if (!accepted) {
@@ -50,7 +53,7 @@ public class VertexPaymentProcessorClient extends PaymentProcessorClient {
         }
     }
 
-    public void purgeQueue() {
+    public void purge() {
         queue.clear();
         failedStatuscodeAttempts.set(0);
         failedAttemptsFallback.set(0);
@@ -83,35 +86,24 @@ public class VertexPaymentProcessorClient extends PaymentProcessorClient {
 
     private void doRequest(PaymentRequest paymentRequest, int retryCount) {
         webClient
-                .post(defaultURI.getPort(), defaultURI.getHost(), defaultURI.getPath())
+                .post(vars.defaultURI.getPort(), vars.defaultURI.getHost(), vars.defaultURI.getPath())
                 .putHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
-                .timeout(requestTimout)
+                .timeout(vars.requestTimout)
                 .sendBuffer(Buffer.buffer(paymentRequest.getJson()))
                 .onSuccess(resp -> {
-                    if (resp.statusCode() != 200) {
-                        fallback(paymentRequest, retryCount);
-                        return;
-                    }
-                    paymentRequest.setDefaultTrue();
-                    repository.save(paymentRequest);
+                    onSuccess(paymentRequest, retryCount, resp);
 
                 })
                 .onFailure(err -> {
-//                    log.error("Error on default processor", err);
-                    if (err instanceof NoStackTraceTimeoutException) {
-//                        log.info("Failed attempts on timeout default: {}", failedAttemptsDefault.incrementAndGet());
-                        fallback(paymentRequest, retryCount);
-                        return;
-                    }
-                    log.error("Unpredictable error", err);
+                    onFailure(paymentRequest, retryCount, err);
                 });
     }
 
     private void fallback(PaymentRequest paymentRequest, int retryCount) {
         webClient
-                .post(fallbackURI.getPort(), fallbackURI.getHost(), fallbackURI.getPath())
+                .post(vars.fallbackURI.getPort(), vars.fallbackURI.getHost(), vars.fallbackURI.getPath())
                 .putHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
-                .timeout(requestTimout * 2)
+                .timeout(vars.requestTimout)
                 .sendBuffer(Buffer.buffer(paymentRequest.getJson()))
                 .onSuccess(resp -> {
                     if (resp.statusCode() != 200) {
@@ -130,7 +122,30 @@ public class VertexPaymentProcessorClient extends PaymentProcessorClient {
                         processPaymentWithRetry(paymentRequest, retryCount);
                         return;
                     }
-                    log.error("Unpredictable error", err);
+                    logError(err);
                 });
+    }
+
+    private void onSuccess(PaymentRequest paymentRequest, int retryCount, HttpResponse<Buffer> resp) {
+        if (resp.statusCode() != 200) {
+            fallback(paymentRequest, retryCount);
+            return;
+        }
+        paymentRequest.setDefaultTrue();
+        repository.save(paymentRequest);
+    }
+
+    private void onFailure(PaymentRequest paymentRequest, int retryCount, Throwable err) {
+        log.error("Error on default processor", err);
+        if (err instanceof NoStackTraceTimeoutException) {
+//                        log.info("Failed attempts on timeout default: {}", failedAttemptsDefault.incrementAndGet());
+            fallback(paymentRequest, retryCount);
+            return;
+        }
+        logError(err);
+    }
+
+    private static void logError(Throwable err) {
+        log.error("Unpredictable error", err);
     }
 }

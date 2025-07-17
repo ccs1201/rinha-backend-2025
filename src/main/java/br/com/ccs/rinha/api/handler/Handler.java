@@ -3,10 +3,8 @@ package br.com.ccs.rinha.api.handler;
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.config.ExecutorConfig;
 import br.com.ccs.rinha.exception.HandlerException;
-import br.com.ccs.rinha.httpclient.VertexPaymentProcessorClient;
+import br.com.ccs.rinha.paymentprocessorclient.VertexPaymentProcessorClient;
 import br.com.ccs.rinha.repository.JdbcPaymentRepository;
-import br.com.ccs.rinha.repository.PaymentRepository;
-import br.com.ccs.rinha.service.PaymentProcessorClient;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
@@ -16,15 +14,14 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 public class Handler implements HttpHandler {
 
     private static final Logger log = LoggerFactory.getLogger(Handler.class);
 
-    private static PaymentProcessorClient paymentProcessorClient;
-    private static PaymentRepository paymentRepository;
+    private static VertexPaymentProcessorClient paymentProcessorClient;
+    private static JdbcPaymentRepository paymentRepository;
     private static Executor executor;
 
     private final String postPaymentURI = "/payments";
@@ -57,12 +54,12 @@ public class Handler implements HttpHandler {
 
                 if (requestURI.equals(postPaymentURI)) {
 //                    CompletableFuture.runAsync(() -> {
-                        try {
-                            paymentProcessorClient.processPayment(PaymentRequest.of(data));
-                        } catch (Exception e) {
-                            log.error(e.getMessage(), e);
-                            throw new HandlerException(e);
-                        }
+                    try {
+                        paymentProcessorClient.processPayment(PaymentRequest.of(data));
+                    } catch (Exception e) {
+                        log.error(e.getMessage(), e);
+                        throw new HandlerException(e);
+                    }
 //                    }, executor);
                     ex.setStatusCode(202);
                     ex.getResponseSender().send(emptyResnpose);
@@ -80,7 +77,6 @@ public class Handler implements HttpHandler {
 
                 if (requestURI.equals(postPurgePaymentsURI)) {
                     paymentRepository.purge();
-                    paymentProcessorClient.failedRetryAttempsts.set(0);
                     paymentProcessorClient.purge();
                     ex.setStatusCode(200);
                     ex.getResponseSender().send(emptyResnpose);

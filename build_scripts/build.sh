@@ -10,7 +10,7 @@ cd ..
 ./mvnw clean package -DskipTests
 
 # Build da imagem Docker
-docker buildx build -f ./build_scripts/Dockerfile-local -t ccs1201/rinha-backend-2025-puro:latest .
+docker buildx build -f ./build_scripts/Dockerfile-local -t ccs1201/rinha-2025-vertex:latest .
 
 # Subir Payment Processors
 docker-compose -f ./build_scripts/docker-compose-payment-processor.yml up -d
