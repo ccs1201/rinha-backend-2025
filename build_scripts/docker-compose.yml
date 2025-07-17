@@ -3,7 +3,7 @@ x-backend-templates:
 #    build:
 #      context: .
 #      dockerfile: Dockerfile
-    image: ccs1201/rinha-backend-2025-puro:latest
+    image: ccs1201/rinha-2025-vertex:latest
     depends_on:
       - backend-db
     networks:
@@ -14,12 +14,13 @@ x-backend-templates:
         limits:
           cpus: "0.6"
           memory: "117.50MB"
+#          memory: "128MB"
 
   app-env: &app-env
     client-processor-timeout: "1500"
     datasource-class-name: "org.postgresql.Driver"
-    datasource-maximum-pool-size: "2"
-    datasource-minimum-idle: "2"
+    datasource-maximum-pool-size: "5"
+    datasource-minimum-idle: "5"
     datasource-password: "rinha"
     datasource-timeout: "2000"
     datasource-url: "jdbc:postgresql://postgres:5432/rinha"
@@ -27,8 +28,8 @@ x-backend-templates:
     payment-processor-default-url: "http://payment-processor-default:8080"
     payment-processor-fallback-url: "http://payment-processor-fallback:8080"
     server-port: "8080"
-    server-io-threads: "2"
-    server-workers-threads: "30"
+    server-io-threads: "4"
+    server-workers-threads: "50"
     thread-pool-size: "1"
     thread-queue-size: "200"
     warmup: "true"
@@ -38,11 +39,19 @@ x-backend-templates:
     -Xms95m \
     -XX:MaxMetaspaceSize=35m \
     -XX:+UseG1GC \
+    -XX:+UseNUMA \
+    -Xss512k \
+    -XX:+UseCompressedOops \
+    -XX:+AlwaysPreTouch \
+    -Xbatch \
+    -XX:+ExitOnOutOfMemoryError \
     -XX:+TieredCompilation \
-    -XX:TieredStopAtLevel=4 \
-    -XX:CompileThreshold=1000 \
-    -XX:+UnlockDiagnosticVMOptions \
-    -XX:+PrintCompilation"
+    -XX:TieredStopAtLevel=1 \
+    -XX:CompileThreshold=100 "
+#    -XX:+UnlockDiagnosticVMOptions \
+#    -XX:+PrintCompilation \
+#    -XX:+PrintTieredEvents \
+#    -XX:+PrintCodeCache \
 #    -XX:+PrintInlining"
 
 

@@ -17,8 +17,10 @@ public class RinhaApp {
         var serverIOThreads = System.getenv("server-io-threads") == null ? 2 : Integer.parseInt(System.getenv("server-io-threads"));
         var serverWorkerThreads = System.getenv("server-worker-threads") == null ? 30 : Integer.parseInt(System.getenv("server-worker-threads"));
         int serverPort = Objects.isNull(envPort) ? 8080 : Integer.parseInt(envPort);
+        log.info("Server IO thread {}", serverIOThreads);
+        log.info("Server Workers threads{}", serverWorkerThreads);
 
-        log.info("Starting rinha de backend app");
+        log.info("Starting rinha de backend app V0.0.1");
         printPromo(10);
 
         Undertow server = Undertow.builder()

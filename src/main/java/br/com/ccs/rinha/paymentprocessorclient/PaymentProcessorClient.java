@@ -117,7 +117,7 @@ public final class PaymentProcessorClient {
                 .header(contentType, contentTypeValue)
                 .version(HttpClient.Version.HTTP_2)
                 .timeout(java.time.Duration.ofMillis(vars.requestTimout))
-                .POST(HttpRequest.BodyPublishers.ofString(paymentRequest.getJson()))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(paymentRequest.jsonBytes))
                 .build();
     }
 }

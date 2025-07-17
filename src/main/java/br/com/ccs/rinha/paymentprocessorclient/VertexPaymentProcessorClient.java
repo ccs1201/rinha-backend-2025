@@ -39,7 +39,7 @@ public final class VertexPaymentProcessorClient {
         this.queue = new ArrayBlockingQueue<>(queueSize, false);
         vars = PaymentProcessorClientVars.getInstance();
         this.repository = JdbcPaymentRepository.getInstance();
-        startProcessQueue();
+//        startProcessQueue();
     }
 
     public static VertexPaymentProcessorClient getInstance() {
@@ -47,10 +47,11 @@ public final class VertexPaymentProcessorClient {
     }
 
     public void processPayment(PaymentRequest paymentRequest) {
-        var accepted = queue.offer(paymentRequest);
-        if (!accepted) {
-            log.error("Payment rejected by queue");
-        }
+        processPaymentWithRetry(paymentRequest, 0);
+//        var accepted = queue.offer(paymentRequest);
+//        if (!accepted) {
+//            log.error("Payment rejected by queue");
+//        }
     }
 
     public void purge() {
@@ -79,6 +80,7 @@ public final class VertexPaymentProcessorClient {
         if (retryCount > 3) {
             log.error("Max retries reached for payment {}", paymentRequest.correlationId);
             log.info("Failed payments count:{}", failedRetryAttempsts.incrementAndGet());
+            processPayment(paymentRequest);
             return;
         }
         doRequest(paymentRequest, retryCount);
@@ -89,13 +91,12 @@ public final class VertexPaymentProcessorClient {
                 .post(vars.defaultURI.getPort(), vars.defaultURI.getHost(), vars.defaultURI.getPath())
                 .putHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
                 .timeout(vars.requestTimout)
-                .sendBuffer(Buffer.buffer(paymentRequest.getJson()))
+                .sendBuffer(Buffer.buffer(paymentRequest.jsonBytes))
                 .onSuccess(resp -> {
                     onSuccess(paymentRequest, retryCount, resp);
-
                 })
                 .onFailure(err -> {
-                    onFailure(paymentRequest, retryCount, err);
+                    onSuccessFailure(paymentRequest, retryCount, err);
                 });
     }
 
@@ -104,25 +105,14 @@ public final class VertexPaymentProcessorClient {
                 .post(vars.fallbackURI.getPort(), vars.fallbackURI.getHost(), vars.fallbackURI.getPath())
                 .putHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
                 .timeout(vars.requestTimout)
-                .sendBuffer(Buffer.buffer(paymentRequest.getJson()))
+                .sendBuffer(Buffer.buffer(paymentRequest.jsonBytes))
                 .onSuccess(resp -> {
-                    if (resp.statusCode() != 200) {
-                        log.info("All processors fail retry");
-                        log.info("Failed attempts on status code total: {}", failedStatuscodeAttempts.incrementAndGet());
-                        processPaymentWithRetry(paymentRequest, retryCount);
-                        return;
-                    }
                     paymentRequest.setDefaultFalse();
-                    repository.save(paymentRequest);
+                    onSuccess(paymentRequest, retryCount, resp);
                 })
                 .onFailure(err -> {
-//                    log.error("Error on fallback processor", err);
-                    if (err instanceof NoStackTraceTimeoutException) {
-//                        log.info("Failed attempts on timeout fallback: {}", failedAttemptsFallback.incrementAndGet());
-                        processPaymentWithRetry(paymentRequest, retryCount);
-                        return;
-                    }
-                    logError(err);
+                    onFallbackFailure(paymentRequest, retryCount, err);
+
                 });
     }
 
@@ -135,11 +125,21 @@ public final class VertexPaymentProcessorClient {
         repository.save(paymentRequest);
     }
 
-    private void onFailure(PaymentRequest paymentRequest, int retryCount, Throwable err) {
+    private void onSuccessFailure(PaymentRequest paymentRequest, int retryCount, Throwable err) {
         log.error("Error on default processor", err);
         if (err instanceof NoStackTraceTimeoutException) {
 //                        log.info("Failed attempts on timeout default: {}", failedAttemptsDefault.incrementAndGet());
             fallback(paymentRequest, retryCount);
+            return;
+        }
+        logError(err);
+    }
+
+    private void onFallbackFailure(PaymentRequest paymentRequest, int retryCount, Throwable err) {
+        //                    log.error("Error on fallback processor", err);
+        if (err instanceof NoStackTraceTimeoutException) {
+//                        log.info("Failed attempts on timeout fallback: {}", failedAttemptsFallback.incrementAndGet());
+            processPaymentWithRetry(paymentRequest, retryCount);
             return;
         }
         logError(err);

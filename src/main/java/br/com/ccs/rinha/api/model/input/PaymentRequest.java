@@ -11,6 +11,8 @@ public final class PaymentRequest {
     public final OffsetDateTime requestedAt;
     public boolean isDefault;
     public final String json;
+    public final byte[] jsonBytes;
+
 
     public void setDefaultFalse() {
         this.isDefault = false;
@@ -24,10 +26,7 @@ public final class PaymentRequest {
         this.correlationId = correlationId;
         this.requestedAt = requestedAt;
         this.json = this.toJson();
-    }
-
-    public String getJson() {
-        return json;
+        this.jsonBytes = json.getBytes(StandardCharsets.UTF_8);
     }
 
     public static PaymentRequest of(byte[] data) {
