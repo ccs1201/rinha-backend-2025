@@ -52,50 +52,6 @@ public class JdbcPaymentRepository implements PaymentRepository {
         instance = new JdbcPaymentRepository();
     }
 
-    public void saveInBatch(PaymentRequest paymentRequest) {
-        paymentRequests.offer(paymentRequest);
-        if (paymentRequests.size() > 199) {
-            insertInBatch();
-        }
-    }
-
-    private void insertInBatch() {
-        log.info("Starting batch insert ");
-        boolean lockAcquired = false;
-        try {
-            // Tenta adquirir o lock com timeout de 100ms
-            lockAcquired = insertLock.tryAcquire(100, TimeUnit.MILLISECONDS);
-            if (!lockAcquired) {
-                log.warn("Insert in batch lock timeout ");
-                return;
-            }
-
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
-                while (!paymentRequests.isEmpty()) {
-                    var request = paymentRequests.poll();
-                    stmt.setObject(1, request.correlationId);
-                    stmt.setBigDecimal(2, request.amount);
-                    stmt.setObject(3, request.requestedAt);
-                    stmt.setBoolean(4, request.isDefault);
-                    stmt.addBatch();
-                }
-                stmt.executeBatch();
-                conn.commit();
-            } catch (SQLException e) {
-                log.error("Payment saving error.", e);
-                throw new RuntimeException(e);
-            }
-        } catch (InterruptedException e) {
-            log.error("Lock interrupted for payment");
-            Thread.currentThread().interrupt();
-        } finally {
-            if (lockAcquired) {
-                insertLock.release();
-            }
-        }
-    }
-
     @Override
     public void save(PaymentRequest request) {
         try (Connection conn = dataSource.getConnection();
@@ -114,7 +70,6 @@ public class JdbcPaymentRepository implements PaymentRepository {
 
     @Override
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
-        insertInBatch();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_SUMMARY)) {
 

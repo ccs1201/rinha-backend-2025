@@ -16,10 +16,10 @@ x-backend-templates:
           memory: "117.50MB"
 
   app-env: &app-env
-    client-processor-timeout: "1500"
+    client-processor-timeout: "5000"
     datasource-class-name: "org.postgresql.Driver"
-    datasource-maximum-pool-size: "5"
-    datasource-minimum-idle: "5"
+    datasource-maximum-pool-size: "2"
+    datasource-minimum-idle: "2"
     datasource-password: "rinha"
     datasource-timeout: "2000"
     datasource-url: "jdbc:postgresql://postgres:5432/rinha"
@@ -29,7 +29,7 @@ x-backend-templates:
     server-port: "8080"
     server-io-threads: "2"
     server-workers-threads: "30"
-    thread-pool-size: "30"
+    thread-pool-size: "1"
     thread-queue-size: "2000"
     warmup: "true"
     warmup_rounds: "10000"
