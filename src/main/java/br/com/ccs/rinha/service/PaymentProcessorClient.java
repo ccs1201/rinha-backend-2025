@@ -68,7 +68,7 @@ public class PaymentProcessorClient {
 
     private void processPaymentWithRetry(PaymentRequest paymentRequest, int retryCount) {
         if (retryCount >= 3) {
-            log.error("Max retries reached for payment {}", paymentRequest.correlationId);
+//            log.error("Max retries reached for payment {}", paymentRequest.correlationId);
             return;
         }
 
@@ -76,13 +76,13 @@ public class PaymentProcessorClient {
             repository.save(paymentRequest);
             return;
         }
-        log.error("Error processing payment default {} - retrying...", paymentRequest.correlationId);
+//        log.error("Error processing payment default {} - retrying...", paymentRequest.correlationId);
 
         if (postToFallback(paymentRequest)) {
             repository.save(paymentRequest);
             return;
         }
-        log.error("Error processing payment fallback {} - retrying...", paymentRequest.correlationId);
+//        log.error("Error processing payment fallback {} - retrying...", paymentRequest.correlationId);
 
         executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
     }
