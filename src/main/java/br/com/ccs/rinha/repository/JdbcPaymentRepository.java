@@ -62,7 +62,6 @@ public final class JdbcPaymentRepository {
             conn.commit();
         } catch (SQLException e) {
             log.error("Payment saving error.", e);
-            throw new RuntimeException(e);
         }
     }
 

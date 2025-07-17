@@ -13,6 +13,7 @@ public class PaymentProcessorClientVars {
     public final URI defaultURI;
     public final URI fallbackURI;
     public final int requestTimout;
+    public final int fallbackRequestTimeout;
     public static final PaymentProcessorClientVars instance = new PaymentProcessorClientVars();
 
     private PaymentProcessorClientVars() {
@@ -23,10 +24,13 @@ public class PaymentProcessorClientVars {
         this.defaultURI = URI.create(defaultUrl);
         this.fallbackURI = URI.create(fallbackUrl);
         this.requestTimout = Integer.parseInt(System.getenv("client-processor-timeout").trim());
+        this.fallbackRequestTimeout = (int) (requestTimout * 1.5);
+
 
         log.info("Default service URL: {}", this.defaultUrl);
         log.info("Fallback fallback URL: {}", this.fallbackUrl);
         log.info("Request timeout: {}", this.requestTimout);
+        log.info("Request Fallback timeout: {}", this.fallbackRequestTimeout);
     }
 
     public static PaymentProcessorClientVars getInstance() {

@@ -1,6 +1,6 @@
 CREATE UNLOGGED TABLE payments
 (
-    correlation_id UUID           NOT NULL,
+    correlation_id UUID PRIMARY KEY,
     amount         DECIMAL(10, 2) NOT NULL,
     requested_at   TIMESTAMP      NOT NULL,
     is_default     BOOLEAN        NOT NULL
