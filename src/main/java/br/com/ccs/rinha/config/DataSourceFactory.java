@@ -56,7 +56,7 @@ public class DataSourceFactory {
         config.setMinimumIdle(minIdle);
         config.setMaximumPoolSize(maxPoolSize);
         config.setConnectionTimeout(dataSourceTimeout);
-        config.setAutoCommit(true);
+        config.setAutoCommit(false);
         config.setValidationTimeout(1000);
         log.info("Data Source Configured {}", config);
 

@@ -3,7 +3,7 @@ package br.com.ccs.rinha.api.handler;
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.config.ExecutorConfig;
 import br.com.ccs.rinha.exception.HandlerException;
-import br.com.ccs.rinha.httpclient.VertexPaymentProcessor;
+import br.com.ccs.rinha.httpclient.VertexPaymentProcessorClient;
 import br.com.ccs.rinha.repository.JdbcPaymentRepository;
 import br.com.ccs.rinha.repository.PaymentRepository;
 import br.com.ccs.rinha.service.PaymentProcessorClient;
@@ -45,7 +45,7 @@ public class Handler implements HttpHandler {
 
     private Handler() {
         paymentRepository = JdbcPaymentRepository.getInstance();
-        paymentProcessorClient = VertexPaymentProcessor.getInstance();//PaymentProcessorClient.getInstance();
+        paymentProcessorClient = VertexPaymentProcessorClient.getInstance();//PaymentProcessorClient.getInstance();
         executor = ExecutorConfig.getExecutor();
     }
 
@@ -56,14 +56,14 @@ public class Handler implements HttpHandler {
                 var requestURI = exchange.getRequestURI();
 
                 if (requestURI.equals(postPaymentURI)) {
-                    CompletableFuture.runAsync(() -> {
+//                    CompletableFuture.runAsync(() -> {
                         try {
                             paymentProcessorClient.processPayment(PaymentRequest.of(data));
                         } catch (Exception e) {
                             log.error(e.getMessage(), e);
                             throw new HandlerException(e);
                         }
-                    }, executor);
+//                    }, executor);
                     ex.setStatusCode(202);
                     ex.getResponseSender().send(emptyResnpose);
                 }
@@ -80,12 +80,10 @@ public class Handler implements HttpHandler {
 
                 if (requestURI.equals(postPurgePaymentsURI)) {
                     paymentRepository.purge();
-                    paymentProcessorClient.failedPaymentsCounter.set(0);
+                    paymentProcessorClient.failedRetryAttempsts.set(0);
+                    paymentProcessorClient.purge();
                     ex.setStatusCode(200);
                     ex.getResponseSender().send(emptyResnpose);
-                }
-                if (requestURI.equals("/faileds")) {
-                    ex.getResponseSender().send("" + paymentProcessorClient.failedPaymentsCounter.get());
                 }
 
             } catch (Exception e) {

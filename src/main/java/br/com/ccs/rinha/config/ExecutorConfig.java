@@ -29,10 +29,10 @@ public class ExecutorConfig {
         String threadPoolSizeStr = System.getenv("thread-pool-size").trim();
         String queueSizeStr = System.getenv("thread-queue-size").trim();
 
-        int threadPoolSize = threadPoolSizeStr.isBlank() ? 10 : Integer.parseInt(threadPoolSizeStr);
+        int threadPoolSize = threadPoolSizeStr.isBlank() ? 11 : Integer.parseInt(threadPoolSizeStr) + 1; //+1 pra thread vertexpaymentprocessor
         int queueSize = queueSizeStr.isBlank() ? 1000 : Integer.parseInt(queueSizeStr);
 
-        log.info("Thread pool size: {}", threadPoolSize);
+        log.info("Thread pool size: {} + 1 para VertexPaymentProcessor", threadPoolSize);
         log.info("Thread pool Queue size {}", queueSize);
 
         ExecutorConfig.instance = new ThreadPoolExecutor(
