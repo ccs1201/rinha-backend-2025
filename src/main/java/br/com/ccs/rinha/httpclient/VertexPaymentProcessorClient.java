@@ -120,6 +120,7 @@ public class VertexPaymentProcessorClient extends PaymentProcessorClient {
                         processPaymentWithRetry(paymentRequest, retryCount);
                         return;
                     }
+                    paymentRequest.setDefaultFalse();
                     repository.save(paymentRequest);
                 })
                 .onFailure(err -> {

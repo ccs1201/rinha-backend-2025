@@ -19,7 +19,7 @@ public class RinhaApp {
         int serverPort = Objects.isNull(envPort) ? 8080 : Integer.parseInt(envPort);
 
         log.info("Starting rinha de backend app");
-        printPromo(5);
+        printPromo(10);
 
         Undertow server = Undertow.builder()
                 .addHttpListener(serverPort, "0.0.0.0")
@@ -31,7 +31,7 @@ public class RinhaApp {
                 .build();
         server.start();
         log.info("Starting server on port {} wait...", serverPort);
-        printPromo(5);
+        printPromo(3);
         log.info("Server started! | I want to play a game!");
 
         registerShutDownHook(server);

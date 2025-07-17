@@ -3,7 +3,7 @@
 # Parar e remover containers existentes
 docker-compose -f docker-compose-payment-processor.yml down --remove-orphans
 docker-compose -f docker-compose.yml down --remove-orphans
-container-clean run
+container-clean all
 
 # Build da aplicação
 cd ..
