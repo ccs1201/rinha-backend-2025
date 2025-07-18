@@ -5,7 +5,8 @@ x-backend-templates:
     #      dockerfile: Dockerfile
     image: csouzadocker/rinha-2025-redis:latest
     depends_on:
-      - redis
+      redis:
+        condition: service_started
     networks:
       - backend
       - payment-processor
@@ -19,30 +20,36 @@ x-backend-templates:
     SERVER_PORT: "8080"
     THREAD_POOL_SIZE: "25"
     REDIS-HOST: "redis"
-    JAVA_OPTS: "\
-    -Xmx110m \
-    -Xms110m \
-    -XX:MaxMetaspaceSize=70m \
-    -XX:+UseSerialGC \ \
-    -XX:+UseNUMA \
-    -Xss512k \
-    -XX:+UseCompressedOops \
-    -XX:+AlwaysPreTouch \
-    -Xbatch \
-    -XX:+ExitOnOutOfMemoryError \
-    -XX:+TieredCompilation \
-    -XX:TieredStopAtLevel=1 \
-    -XX:CompileThreshold=100
-    -XX:+HeapDumpOnOutOfMemoryError \
-    -Dlogging.level.root=warn \
-    -Dspring.threads.virtual.enabled=false \
-    -Dserver.undertow.threads.io=4 \
-    -Dserver.undertow.threads.worker=5"
-#    -XX:+UnlockDiagnosticVMOptions \
-#    -XX:+PrintCompilation \
-#    -XX:+PrintTieredEvents \
-#    -XX:+PrintCodeCache \
-#    -XX:+PrintInlining"
+    JAVA_OPTS: >
+      -Xmx110m
+      -Xms110m
+      -XX:MaxMetaspaceSize=70m
+      -XX:MaxGCPauseMillis=200
+      -Xss512k
+      -XX:+UseG1GC
+      -XX:+UseLargePages
+      -XX:+UseCompressedOops
+      -XX:+UseCompressedClassPointers
+      -XX:+AlwaysPreTouch
+      -Xbatch
+      -XX:+UnlockExperimentalVMOptions
+      -XX:+UnlockDiagnosticVMOptions
+      -XX:+UseFastUnorderedTimeStamps
+      -XX:+ExitOnOutOfMemoryError
+      -XX:+TieredCompilation
+      -XX:TieredStopAtLevel=1
+      -XX:CompileThreshold=100
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:+PrintCompilation
+      -XX:+PrintTieredEvents
+      -XX:+PrintCodeCache
+      -XX:+PrintInlining
+      -Dlogging.level.root=warn
+      -Dspring.threads.virtual.enabled=false
+      -Dserver.undertow.threads.io=4
+      -Dserver.undertow.threads.worker=5
+      -XX:CompileCommandFile=compile-commands.txt
+    #    -XX:+UseNUMA \
 
 services:
   nginx:
@@ -83,7 +90,7 @@ services:
     image: redis:7-alpine
     container_name: redis
     hostname: redis
-    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru --save "" --tcp-keepalive 60 --timeout 0
+    command: redis-server --maxmemory 45mb --maxmemory-policy allkeys-lru --save "" --tcp-keepalive 60 --timeout 0
     ports:
       - "6379:6379"
     networks:

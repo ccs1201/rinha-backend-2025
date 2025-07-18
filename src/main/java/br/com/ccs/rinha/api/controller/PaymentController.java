@@ -2,8 +2,8 @@ package br.com.ccs.rinha.api.controller;
 
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.api.model.output.PaymentSummary;
-import br.com.ccs.rinha.service.PaymentProcessorClient;
 import br.com.ccs.rinha.repository.RedisPaymentRepository;
+import br.com.ccs.rinha.service.PaymentProcessorClient;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +42,11 @@ public class PaymentController {
     }
 
     @GetMapping("/payments-summary")
-    public PaymentSummary getPaymentsSummary(@RequestParam OffsetDateTime from,
-                                             @RequestParam OffsetDateTime to) {
+    public PaymentSummary getPaymentsSummary(@RequestParam(required = false) OffsetDateTime from,
+                                             @RequestParam(required = false) OffsetDateTime to) {
 //        log.info("Starting payments summary from {} to {}", from, to);
 //        long start = System.currentTimeMillis();
+
         return repository.getSummary(from, to);
 //        log.info("Got payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
     }

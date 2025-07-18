@@ -1,7 +1,7 @@
 package br.com.ccs.rinha.repository;
 
-import br.com.ccs.rinha.api.model.output.PaymentSummary;
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
+import br.com.ccs.rinha.api.model.output.PaymentSummary;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,8 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
+
+import static java.util.Objects.isNull;
 
 @Service
 public class RedisPaymentRepository {
@@ -84,6 +85,13 @@ public class RedisPaymentRepository {
 
 
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
+
+        if (isNull(from)) {
+            from = OffsetDateTime.MIN;
+        }
+        if (isNull(to)) {
+            to = OffsetDateTime.now();
+        }
 
 //        if (from.getYear() < currentYear && to.getYear() > currentYear) {
 //            log.info("Getting full summary may be inconsistent until the end of async payment process");

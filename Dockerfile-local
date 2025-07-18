@@ -1,5 +1,6 @@
 FROM eclipse-temurin:24-jre-alpine
 WORKDIR /app
 COPY target/rinha-backend-2025-0.0.1-SNAPSHOT.jar app.jar
+COPY compile-commands.txt ./compile-commands.txt
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -XX:CompileCommandFile=compile-commands.txt -jar app.jar > app/jit.log 2>&1"]

@@ -9,15 +9,15 @@ docker container prune -f
 ./mvnw clean package -DskipTests
 
 # Build da imagem Docker
-docker buildx build -f Dockerfile-local -t csouzadocker/rinha-2025-redis:latest .
+docker buildx build -f Dockerfile -t csouzadocker/rinha-2025-redis:latest .
 
 # Subir Payment Processors
-docker-compose -f docker-compose-payment-processor.yml up -d
+#docker-compose -f docker-compose-payment-processor.yml up -d
 
 # Aguardar Payment Processors
 #sleep 3
 
 # Subir aplicação
-docker-compose -f docker-compose.yml up -d
+#docker-compose -f docker-compose.yml up -d
 
 #echo "Aplicação rodando na porta 9999"
