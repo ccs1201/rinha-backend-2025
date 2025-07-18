@@ -17,7 +17,7 @@ x-backend-templates:
 
   app-env: &app-env
     SERVER_PORT: "8080"
-    THREAD_POOL_SIZE: "15"
+    THREAD_POOL_SIZE: "25"
     REDIS-HOST: "redis"
     JAVA_OPTS: "\
     -Xmx110m \
