@@ -19,33 +19,30 @@ x-backend-templates:
   app-env: &app-env
     SERVER_PORT: "8080"
     THREAD_POOL_SIZE: "25"
-    REDIS-HOST: "redis"
+    REDIS_HOST: "redis"
     JAVA_OPTS: >
-      -Xmx110m
       -Xms110m
+      -Xmx110m
       -XX:MaxMetaspaceSize=70m
-      -XX:MaxGCPauseMillis=200
       -Xss512k
+      -XX:MaxGCPauseMillis=200
       -XX:+UseG1GC
-      -XX:+UseLargePages
       -XX:+UseCompressedOops
       -XX:+UseCompressedClassPointers
       -XX:+AlwaysPreTouch
-      -Xbatch
-      -XX:+UnlockExperimentalVMOptions
-      -XX:+UnlockDiagnosticVMOptions
-      -XX:+UseFastUnorderedTimeStamps
       -XX:+ExitOnOutOfMemoryError
       -XX:+TieredCompilation
-      -XX:TieredStopAtLevel=1
+      -XX:TieredStopAtLevel=3
       -XX:CompileThreshold=100
-      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:+UnlockExperimentalVMOptions
+      -XX:+UseFastUnorderedTimeStamps
       -XX:+PrintCompilation
       -XX:+PrintTieredEvents
       -XX:+PrintCodeCache
+      -XX:+UnlockDiagnosticVMOptions
       -XX:+PrintInlining
       -Dlogging.level.root=warn
-      -Dspring.threads.virtual.enabled=false
+      -Dspring.threads.virtual.enabled=true
       -Dserver.undertow.threads.io=4
       -Dserver.undertow.threads.worker=5
       -XX:CompileCommandFile=compile-commands.txt
@@ -75,14 +72,14 @@ services:
   app1:
     <<: *app
     container_name: backend-api1
-    hostname: app1
+    hostname: backend-api1
     environment:
       <<: *app-env
 
   app2:
     <<: *app
     container_name: backend-api2
-    hostname: app2
+    hostname: backend-api2
     environment:
       <<: *app-env
 

@@ -1,0 +1,37 @@
+# --------------------------
+# Etapa 1: Build com GraalVM
+# --------------------------
+FROM ghcr.io/graalvm/graalvm-ce:23.0.2 AS builder
+
+#ENV JAVA_HOME=/opt/graalvm
+#ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Instala Maven e ferramentas
+USER root
+RUN microdnf install -y maven
+    #gu install native-image
+
+# Diretório de build
+WORKDIR /app
+
+# Copia o projeto
+COPY . .
+
+# Compila como native image
+RUN mvn -Pnative -DskipTests native:compile
+
+# --------------------------
+# Etapa 2: Imagem final
+# --------------------------
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# Copia o binário gerado
+COPY --from=builder /app/target/rinha-backend-2025 /app/rinha
+
+# Expondo a porta padrão do Spring Boot
+EXPOSE 8080
+
+# Comando de inicialização
+CMD ["./rinha"]

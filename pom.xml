@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>3.3.4</version>
+        <relativePath/>
     </parent>
+
     <groupId>br.com.ccs</groupId>
     <artifactId>rinha-backend-2025</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>rinha-backend-2025</name>
     <description>rinha-backend-2025</description>
     <url>https://www.linkedin.com/in/ccs1201/</url>
+
     <properties>
-        <java.version>24</java.version>
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -43,27 +49,57 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-jdk18on</artifactId>
+            <version>1.78</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-configuration-processor</artifactId>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>br.com.ccs.rinha.RinhaApp</mainClass>
+                    <image>
+                        <name>csouzadocker/rinha-2025-redis:latest</name>
+                        <builder>paketobuildpacks/builder-jammy-java-tiny:latest</builder>
+                        <env>
+                            <BP_JVM_TYPE>JDK</BP_JVM_TYPE>
+                            <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
+                            <BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
+                            <BP_BOOT_NATIVE_IMAGE>true</BP_BOOT_NATIVE_IMAGE>
+                            <BPL_SPRING_AOT_ENABLED>true</BPL_SPRING_AOT_ENABLED>
+                            <BP_SPRING_AOT_ENABLED>true</BP_SPRING_AOT_ENABLED>
+
+                            <!-- Argumentos de build para GraalVM -->
+                            <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
+                                --no-fallback
+                                --enable-preview
+                                -H:+ReportExceptionStackTraces
+                            </BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
+
+                            <BP_BOOT_NATIVE_IMAGE_BUILD_ARGUMENTS>
+                                --enable-preview
+                                --no-fallback
+                            </BP_BOOT_NATIVE_IMAGE_BUILD_ARGUMENTS>
+                        </env>
+                        <buildpacks>
+                            <buildpack>paketobuildpacks/oracle</buildpack>
+                            <buildpack>paketobuildpacks/java-native-image</buildpack>
+                        </buildpacks>
+                    </image>
+                </configuration>
             </plugin>
         </plugins>
     </build>
-
 </project>

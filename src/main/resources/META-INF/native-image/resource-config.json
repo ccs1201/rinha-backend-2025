@@ -1,0 +1,10 @@
+{
+  "resources": {
+    "includes": [
+      { "pattern": "application.*" },
+      { "pattern": ".*\\.properties" },
+      { "pattern": ".*\\.yml" },
+      { "pattern": "logback.xml" }
+    ]
+  }
+}
