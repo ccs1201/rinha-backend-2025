@@ -9,3 +9,4 @@ docker builder prune -a -f
 
 echo "Iniciando build da imagem native..."
 ./mvnw clean -Pnative spring-boot:build-image
+

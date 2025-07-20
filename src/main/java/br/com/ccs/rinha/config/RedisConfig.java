@@ -8,7 +8,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class RedisConfig {
 
     private static final Logger log = LoggerFactory.getLogger(RedisConfig.class);

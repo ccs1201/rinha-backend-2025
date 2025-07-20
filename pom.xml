@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.4</version>
+        <version>3.5.3</version>
         <relativePath/>
     </parent>
 
@@ -52,14 +52,22 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.78</version>
-            <scope>runtime</scope>
+            <version>1.78.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcutil-jdk18on</artifactId>
+            <version>1.78.1</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bctls-jdk18on</artifactId>
             <version>1.78</version>
-            <scope>runtime</scope>
         </dependency>
     </dependencies>
 
@@ -76,8 +84,7 @@
                         <env>
                             <BP_JVM_TYPE>JDK</BP_JVM_TYPE>
                             <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
-                            <BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
-                            <BP_BOOT_NATIVE_IMAGE>true</BP_BOOT_NATIVE_IMAGE>
+                            <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
                             <BPL_SPRING_AOT_ENABLED>true</BPL_SPRING_AOT_ENABLED>
                             <BP_SPRING_AOT_ENABLED>true</BP_SPRING_AOT_ENABLED>
 
@@ -85,13 +92,18 @@
                             <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                 --no-fallback
                                 --enable-preview
+                                --initialize-at-build-time
                                 -H:+ReportExceptionStackTraces
-                            </BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
+                                -H:IncludeResources=.*.properties
+                                -H:+UnlockExperimentalVMOptions
+                                -H:TraceClassInitialization=true
+                                -H:+ReportUnsupportedElementsAtRuntime
+                                -H:+StaticExecutableWithDynamicLibC
+                                --initialize-at-run-time=org.springframework.core.io.VfsUtils
 
-                            <BP_BOOT_NATIVE_IMAGE_BUILD_ARGUMENTS>
-                                --enable-preview
-                                --no-fallback
-                            </BP_BOOT_NATIVE_IMAGE_BUILD_ARGUMENTS>
+                                --trace-class-initialization=io.netty.buffer.*
+
+                            </BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                         </env>
                         <buildpacks>
                             <buildpack>paketobuildpacks/oracle</buildpack>
