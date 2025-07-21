@@ -58,6 +58,7 @@ public class PaymentProcessorClient {
             restTemplate.postForObject(defaultUrl, paymentRequest, Object.class);
             repository.store(paymentRequest);
         } catch (Exception e) {
+            log.error("Default Error {}", e.getMessage());
             postToFallback(paymentRequest, retryCount);
         }
     }
@@ -68,6 +69,7 @@ public class PaymentProcessorClient {
             restTemplate.postForObject(fallbackUrl, paymentRequest, Object.class);
             repository.store(paymentRequest);
         } catch (Exception e) {
+            log.error("Fallback Error {}", e.getMessage());
             executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
         }
     }

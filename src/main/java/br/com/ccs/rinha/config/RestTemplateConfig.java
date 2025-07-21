@@ -1,20 +1,32 @@
 package br.com.ccs.rinha.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+
+import java.time.Duration;
 
 @Configuration(proxyBeanMethods = false)
 public class RestTemplateConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(RestTemplateConfig.class);
+
     @Bean
     public RestTemplate restTemplate() {
 
-        var clientHttpRequestFactory = new SimpleClientHttpRequestFactory();
-        clientHttpRequestFactory.setConnectTimeout(200);
-        clientHttpRequestFactory.setReadTimeout(5_0000);
+        var connectionTimeOut = Integer.parseInt(System.getenv("REQUEST_CONNECTION_TIMEOUT"));
+        var readTimeOut = Integer.parseInt(System.getenv("REQUEST_READ_TIMEOUT"));
 
-        return new RestTemplate(clientHttpRequestFactory);
+        log.info("Connection timeout: {}", connectionTimeOut);
+        log.info("Read timeout: {}", readTimeOut);
+
+        return new RestTemplateBuilder()
+                .requestFactorySettings(requestFactory -> requestFactory.
+                        withConnectTimeout(Duration.ofMillis(100))
+                        .withReadTimeout(Duration.ofMillis(1500)))
+                .build();
     }
 }

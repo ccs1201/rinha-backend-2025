@@ -5,8 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Configuration(proxyBeanMethods = false)
 public class ExecutorConfig {
@@ -15,9 +17,20 @@ public class ExecutorConfig {
 
     @Bean
     public ExecutorService executorService() {
+
+        var virtual = Boolean.parseBoolean(System.getenv("VIRTUAL_THREADS"));
+
         int threadPoolSize = Integer.parseInt(System.getenv("THREAD_POOL_SIZE"));
+        log.info("Using Virtual Threads: {}", virtual);
         log.info("Thread pool size: {}", threadPoolSize);
-        return Executors.newFixedThreadPool(threadPoolSize, Thread.ofVirtual().factory());
+        return new ThreadPoolExecutor(
+                threadPoolSize,
+                threadPoolSize,
+                10, TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(200, true),
+                virtual ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory(),
+                new ThreadPoolExecutor.DiscardPolicy());
+
     }
 
 }

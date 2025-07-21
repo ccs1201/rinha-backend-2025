@@ -55,7 +55,7 @@ public class RedisPaymentRepository {
 
     public void store(PaymentRequest request) {
         var data = String.format("%s:%s:%s", request.correlationId, request.amount, request.isDefault);
-
+//        log.info("Storando no redis...");
         redisTemplate
                 .opsForZSet()
                 .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
@@ -86,12 +86,8 @@ public class RedisPaymentRepository {
 
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
 
-        if (isNull(from)) {
-            from = OffsetDateTime.MIN;
-        }
-        if (isNull(to)) {
-            to = OffsetDateTime.now();
-        }
+        from = getFrom(from);
+        to = getTo(to);
 
 //        if (from.getYear() < currentYear && to.getYear() > currentYear) {
 //            log.info("Getting full summary may be inconsistent until the end of async payment process");
@@ -112,12 +108,24 @@ public class RedisPaymentRepository {
 //            return getFullSummary();
 //        }
 
-        long fromTimestamp = from.toEpochSecond();
-        long toTimestamp = to.toEpochSecond();
 
-        var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, fromTimestamp, toTimestamp);
+        var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, from.toEpochSecond(), to.toEpochSecond());
 
         return calculateSummary(payments);
+    }
+
+    private static OffsetDateTime getTo(OffsetDateTime to) {
+        if (isNull(to)) {
+            to = OffsetDateTime.now();
+        }
+        return to;
+    }
+
+    private static OffsetDateTime getFrom(OffsetDateTime from) {
+        if (isNull(from)) {
+            from = OffsetDateTime.MIN;
+        }
+        return from;
     }
 
     private PaymentSummary getFullSummary() {

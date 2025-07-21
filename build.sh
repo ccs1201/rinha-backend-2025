@@ -1,11 +1,11 @@
 #!/bin/bash
 
-export JAVA_HOME=/snap/graalvm-jdk/15/graalvm-ce
+export JAVA_HOME=/home/csouza/.jdks/graalvm-jdk-24.0.1
 export PATH=$JAVA_HOME/bin:$PATH
 source ~/.bashrc
 
 # Build da aplicação
-./mvnw clean package -Pnative spring-boot:build-image
+./mvnw clean package -Pnative spring-boot:build-image-no-fork
 
 # Build da imagem Docker
 #docker buildx build -f Dockerfile -t csouzadocker/rinha-2025-redis:latest .

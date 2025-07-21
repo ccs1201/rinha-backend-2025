@@ -53,9 +53,9 @@ public class PaymentController {
 
     @PostMapping("/purge-payments")
     public ResponseEntity<Void> purgePayments() {
-        log.info("Purging payments");
+//        log.info("Purging payments");
         repository.purge();
-        log.info("Payments purged");
+//        log.info("Payments purged");
         return ResponseEntity.ok().build();
     }
 

@@ -1,8 +1,8 @@
 x-backend-templates:
   app: &app
-    #    build:
-    #      context: .
-    #      dockerfile: Dockerfile
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
     image: csouzadocker/rinha-2025-redis:latest
     depends_on:
       redis:
@@ -18,35 +18,19 @@ x-backend-templates:
 
   app-env: &app-env
     SERVER_PORT: "8080"
-    THREAD_POOL_SIZE: "25"
+    VIRTUAL_THREADS: "true"
+    THREAD_POOL_SIZE: "50"
     REDIS_HOST: "redis"
+    REQUEST_CONNECTION_TIMEOUT: "200"
+    REQUEST_READ_TIMEOUT: "1500"
+    payment-processor.default.url: "http://payment-processor-default:8080"
+    payment-processor.fallback.url: "http://payment-processor-fallback:8080"
     JAVA_OPTS: >
-      -Xms110m
-      -Xmx110m
-      -XX:MaxMetaspaceSize=70m
-      -Xss512k
-      -XX:MaxGCPauseMillis=200
-      -XX:+UseG1GC
-      -XX:+UseCompressedOops
-      -XX:+UseCompressedClassPointers
-      -XX:+AlwaysPreTouch
-      -XX:+ExitOnOutOfMemoryError
-      -XX:+TieredCompilation
-      -XX:TieredStopAtLevel=3
-      -XX:CompileThreshold=100
-      -XX:+UnlockExperimentalVMOptions
-      -XX:+UseFastUnorderedTimeStamps
-      -XX:+PrintCompilation
-      -XX:+PrintTieredEvents
-      -XX:+PrintCodeCache
-      -XX:+UnlockDiagnosticVMOptions
-      -XX:+PrintInlining
       -Dlogging.level.root=warn
-      -Dspring.threads.virtual.enabled=true
-      -Dserver.undertow.threads.io=4
-      -Dserver.undertow.threads.worker=5
-      -XX:CompileCommandFile=compile-commands.txt
-    #    -XX:+UseNUMA \
+      -Dspring.threads.virtual.enabled=false
+      -Dserver.undertow.threads.io=2
+      -Dserver.undertow.threads.worker=50
+  
 
 services:
   nginx:
