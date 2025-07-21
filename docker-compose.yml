@@ -18,7 +18,7 @@ x-backend-templates:
 
   app-env: &app-env
     SERVER_PORT: "8080"
-    THREAD_POOL_SIZE: "16"
+    THREAD_POOL_SIZE: "25"
     THREAD_QUEUE_SIZE: "5000"
     REDIS-HOST: "redis"
     REQUEST_CONNECTION_TIMEOUT: "100"
@@ -42,13 +42,13 @@ x-backend-templates:
       -XX:+ExitOnOutOfMemoryError
       -XX:+TieredCompilation
       -XX:TieredStopAtLevel=1
-      -XX:CompileThreshold=500
+      -XX:CompileThreshold=100
       -XX:+HeapDumpOnOutOfMemoryError
       -Dlogging.level.root=error
-      -Dspring.threads.virtual.enabled=false
+      -Dspring.threads.virtual.enabled=true
+      -Dserver.port=8080
       -Dserver.undertow.threads.io=4
       -Dserver.undertow.threads.worker=8
-      -Dserver.port=8080
 #    -XX:+UseNUMA \
 #    -XX:+PrintCompilation
 #    -XX:+PrintTieredEvents

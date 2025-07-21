@@ -1,2 +1,0 @@
-compileonly,br/com/ccs/rinha/.*
-inline,br/com/ccs/rinha/.*
