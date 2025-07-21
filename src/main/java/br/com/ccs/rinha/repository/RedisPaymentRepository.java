@@ -29,14 +29,11 @@ public class RedisPaymentRepository {
     private static final String DEFAULT_AMOUNT = "default:amount";
     private static final String FALLBACK_AMOUNT = "fallback:amount";
     private static final String PAYMENTS = "payments";
-    private final int currentYear = LocalDate.now().getYear();
-    private final ExecutorService executorService;
     private final boolean shouldShutdownImmediately;
 
     public RedisPaymentRepository(RedisTemplate<String, String> redisTemplate, ExecutorService executorService,
                                   @Value("${SHUTDOWN_IMMEDIATELY}") boolean shutdownImmediately) {
         this.redisTemplate = redisTemplate;
-        this.executorService = executorService;
         this.shouldShutdownImmediately = shutdownImmediately;
         log.info("SHUTDOWN_IMMEDIATELY: {}", shouldShutdownImmediately);
     }
@@ -59,28 +56,6 @@ public class RedisPaymentRepository {
         redisTemplate
                 .opsForZSet()
                 .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
-
-//        if (request.isDefault) {
-//            storeDefault(request, data);
-//        } else {
-//            storeFallback(request, data);
-//        }
-    }
-
-    private void storeDefault(PaymentRequest request, String data) {
-//        redisTemplate.opsForValue().increment(DEFAULT_COUNT);
-//        redisTemplate.opsForValue().increment(DEFAULT_AMOUNT, request.amount.doubleValue());
-        redisTemplate
-                .opsForZSet()
-                .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
-    }
-
-    private void storeFallback(PaymentRequest request, String data) {
-//        redisTemplate.opsForValue().increment(FALLBACK_COUNT);
-//        redisTemplate.opsForValue().increment(FALLBACK_AMOUNT, request.amount.doubleValue());
-        redisTemplate
-                .opsForZSet()
-                .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
     }
 
 
@@ -93,29 +68,7 @@ public class RedisPaymentRepository {
             to = OffsetDateTime.now();
         }
 
-//        if (from.getYear() < currentYear && to.getYear() > currentYear) {
-//            log.info("Getting full summary may be inconsistent until the end of async payment process");
-//
-//            if (!shouldShutdownImmediately) {
-//                var start = System.currentTimeMillis();
-//                while (((ThreadPoolExecutor) executorService).getActiveCount() > 0) {
-//                    try {
-//                        log.info("Waiting for async payment process to finish. Active tasks: {}", (long) ((ThreadPoolExecutor) executorService).getQueue().size());
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        Thread.currentThread().interrupt();
-//                        throw new RuntimeException(e);
-//                    }
-//                }
-//                log.info("Async payment process finished in {}ms", System.currentTimeMillis() - start);
-//            }
-//            return getFullSummary();
-//        }
-
-        long fromTimestamp = from.toEpochSecond();
-        long toTimestamp = to.toEpochSecond();
-
-        var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, fromTimestamp, toTimestamp);
+        var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, from.toEpochSecond(), to.toEpochSecond());
 
         return calculateSummary(payments);
     }

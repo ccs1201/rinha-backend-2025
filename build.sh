@@ -6,7 +6,7 @@ docker-compose -f docker-compose.yml down --remove-orphans
 docker container prune -f
 
 # Build da aplicação
-./mvnw clean package -DskipTests
+#./mvnw clean package
 
 # Build da imagem Docker
 docker buildx build -f Dockerfile -t csouzadocker/rinha-2025-redis:latest .

@@ -44,11 +44,7 @@ public class PaymentController {
     @GetMapping("/payments-summary")
     public PaymentSummary getPaymentsSummary(@RequestParam(required = false) OffsetDateTime from,
                                              @RequestParam(required = false) OffsetDateTime to) {
-//        log.info("Starting payments summary from {} to {}", from, to);
-//        long start = System.currentTimeMillis();
-
         return repository.getSummary(from, to);
-//        log.info("Got payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
     }
 
     @PostMapping("/purge-payments")

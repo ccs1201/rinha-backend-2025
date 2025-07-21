@@ -56,17 +56,21 @@ public class PaymentProcessorClient {
         try {
             paymentRequest.setDefaultTrue();
             restTemplate.postForObject(defaultUrl, paymentRequest, Object.class);
-            repository.store(paymentRequest);
+            save(paymentRequest);
         } catch (Exception e) {
             postToFallback(paymentRequest, retryCount);
         }
+    }
+
+    private void save(PaymentRequest paymentRequest) {
+        repository.store(paymentRequest);
     }
 
     private void postToFallback(PaymentRequest paymentRequest, int retryCount) {
         try {
             paymentRequest.setDefaultFalse();
             restTemplate.postForObject(fallbackUrl, paymentRequest, Object.class);
-            repository.store(paymentRequest);
+            save(paymentRequest);
         } catch (Exception e) {
             executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
         }
