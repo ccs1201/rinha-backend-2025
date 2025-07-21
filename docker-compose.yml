@@ -18,7 +18,7 @@ x-backend-templates:
 
   app-env: &app-env
     SERVER_PORT: "8080"
-    THREAD_POOL_SIZE: "15"
+    THREAD_POOL_SIZE: "16"
     THREAD_QUEUE_SIZE: "5000"
     REDIS-HOST: "redis"
     REQUEST_CONNECTION_TIMEOUT: "100"
@@ -47,7 +47,7 @@ x-backend-templates:
       -Dlogging.level.root=error
       -Dspring.threads.virtual.enabled=false
       -Dserver.undertow.threads.io=4
-      -Dserver.undertow.threads.worker=5
+      -Dserver.undertow.threads.worker=8
       -Dserver.port=8080
 #    -XX:+UseNUMA \
 #    -XX:+PrintCompilation
