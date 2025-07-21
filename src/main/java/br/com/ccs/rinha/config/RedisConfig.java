@@ -21,6 +21,7 @@ public class RedisConfig {
         connectionFactory.setValidateConnection(false);
         connectionFactory.setShareNativeConnection(true);
         connectionFactory.setEagerInitialization(true);
+        connectionFactory.start();
         RedisTemplate<String, String> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());

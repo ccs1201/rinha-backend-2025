@@ -42,37 +42,21 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.78.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.78.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcutil-jdk18on</artifactId>
-            <version>1.78.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bctls-jdk18on</artifactId>
-            <version>1.78</version>
-        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.boot</groupId>-->
+        <!--            <artifactId>spring-boot-configuration-processor</artifactId>-->
+        <!--            <optional>true</optional>-->
+        <!--        </dependency>-->
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -83,32 +67,16 @@
                         <builder>paketobuildpacks/builder-jammy-java-tiny:latest</builder>
                         <env>
                             <BP_JVM_TYPE>JDK</BP_JVM_TYPE>
-                            <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
                             <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
-                            <BPL_SPRING_AOT_ENABLED>true</BPL_SPRING_AOT_ENABLED>
-                            <BP_SPRING_AOT_ENABLED>true</BP_SPRING_AOT_ENABLED>
-
+                            <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
                             <!-- Argumentos de build para GraalVM -->
                             <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                 --no-fallback
                                 --enable-preview
-                                --initialize-at-build-time
-                                -H:+ReportExceptionStackTraces
-                                -H:IncludeResources=.*.properties
                                 -H:+UnlockExperimentalVMOptions
-                                -H:TraceClassInitialization=true
-                                -H:+ReportUnsupportedElementsAtRuntime
-                                -H:+StaticExecutableWithDynamicLibC
-                                --initialize-at-run-time=org.springframework.core.io.VfsUtils
-
-                                --trace-class-initialization=io.netty.buffer.*
-
+                                -H:Optimize=3
                             </BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                         </env>
-                        <buildpacks>
-                            <buildpack>paketobuildpacks/oracle</buildpack>
-                            <buildpack>paketobuildpacks/java-native-image</buildpack>
-                        </buildpacks>
                     </image>
                 </configuration>
             </plugin>

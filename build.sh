@@ -1,15 +1,14 @@
 #!/bin/bash
 
-# Parar e remover containers existentes
-docker-compose -f docker-compose-payment-processor.yml down --remove-orphans
-docker-compose -f docker-compose.yml down --remove-orphans
-docker container prune -f
+export JAVA_HOME=/snap/graalvm-jdk/15/graalvm-ce
+export PATH=$JAVA_HOME/bin:$PATH
+source ~/.bashrc
 
 # Build da aplicação
-./mvnw clean package -DskipTests
+./mvnw clean package -Pnative spring-boot:build-image
 
 # Build da imagem Docker
-docker buildx build -f Dockerfile -t csouzadocker/rinha-2025-redis:latest .
+#docker buildx build -f Dockerfile -t csouzadocker/rinha-2025-redis:latest .
 
 # Subir Payment Processors
 #docker-compose -f docker-compose-payment-processor.yml up -d
