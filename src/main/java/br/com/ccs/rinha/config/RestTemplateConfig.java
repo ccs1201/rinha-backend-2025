@@ -33,8 +33,8 @@ public class RestTemplateConfig {
 
         return new RestTemplateBuilder()
                 .requestFactorySettings(requestFactory -> requestFactory.
-                        withConnectTimeout(Duration.ofMillis(100))
-                        .withReadTimeout(Duration.ofMillis(1500)))
+                        withConnectTimeout(Duration.ofMillis(connectionTimeOut))
+                        .withReadTimeout(Duration.ofMillis(readTimeOut)))
                 .build();
     }
 
