@@ -29,16 +29,16 @@ public class RedisPaymentRepository {
     private static final String DEFAULT_AMOUNT = "default:amount";
     private static final String FALLBACK_AMOUNT = "fallback:amount";
     private static final String PAYMENTS = "payments";
-    private final int currentYear = LocalDate.now().getYear();
-    private final ExecutorService executorService;
     private final boolean shouldShutdownImmediately;
+    private final int repositoryDelay;
 
-    public RedisPaymentRepository(RedisTemplate<String, String> redisTemplate, ExecutorService executorService,
+    public RedisPaymentRepository(RedisTemplate<String, String> redisTemplate,
                                   @Value("${SHUTDOWN_IMMEDIATELY}") boolean shutdownImmediately) {
         this.redisTemplate = redisTemplate;
-        this.executorService = executorService;
         this.shouldShutdownImmediately = shutdownImmediately;
+        this.repositoryDelay = Integer.parseInt(System.getenv("REPOSITORY_DELAY"));
         log.info("SHUTDOWN_IMMEDIATELY: {}", shouldShutdownImmediately);
+        log.info("Respository delay set to {}", repositoryDelay);
     }
 
     @PostConstruct
@@ -84,6 +84,13 @@ public class RedisPaymentRepository {
         }
         if (isNull(to)) {
             to = OffsetDateTime.now().plusSeconds(10);
+        }
+        if (from.isBefore(OffsetDateTime.now().minusMinutes(1))) {
+            try {
+                Thread.sleep(repositoryDelay);
+            } catch (InterruptedException e) {
+                log.error(e.getMessage(), e);
+            }
         }
 
 //        if (from.getYear() < currentYear && to.getYear() > currentYear) {

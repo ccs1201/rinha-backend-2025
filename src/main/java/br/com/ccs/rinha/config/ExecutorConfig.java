@@ -21,6 +21,7 @@ public class ExecutorConfig {
         var virtual = Boolean.parseBoolean(System.getenv("VIRTUAL_THREADS"));
         int threadPoolSize = Integer.parseInt(System.getenv("THREAD_POOL_SIZE"));
         int queueSize = Integer.parseInt(System.getenv("QUEUE_SIZE"));
+        boolean queueIsFair = Boolean.parseBoolean(System.getenv("QUEUE_IS_FAIR"));
 
         log.info("Using Virtual Threads: {}", virtual);
         log.info("Thread pool size: {}", threadPoolSize);
@@ -28,7 +29,7 @@ public class ExecutorConfig {
                 threadPoolSize,
                 threadPoolSize,
                 10, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(queueSize, true),
+                new ArrayBlockingQueue<>(queueSize, queueIsFair),
                 virtual ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory(),
                 new ThreadPoolExecutor.DiscardPolicy());
 

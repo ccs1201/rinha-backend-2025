@@ -1,9 +1,6 @@
 x-backend-templates:
   app: &app
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-    image: csouzadocker/rinha-2025-redis:latest
+    image: csouzadocker/rinha-2025-redis-native:latest
     depends_on:
       redis:
         condition: service_started
@@ -19,19 +16,22 @@ x-backend-templates:
   app-env: &app-env
     SERVER_PORT: "8080"
     VIRTUAL_THREADS: "true"
-    THREAD_POOL_SIZE: "5"
+    THREAD_POOL_SIZE: "4"
     QUEUE_SIZE: "500"
+    QUEUE_IS_FAIR: "false"
     REDIS_HOST: "redis"
-    REQUEST_CONNECTION_TIMEOUT: "100"
+    REPOSITORY_DELAY: "1000"
+    REQUEST_CONNECTION_TIMEOUT: "200"
     REQUEST_READ_TIMEOUT: "6000"
     payment-processor.default.url: "http://payment-processor-default:8080"
     payment-processor.fallback.url: "http://payment-processor-fallback:8080"
     JAVA_OPTS: >
-      -Dlogging.level.root=warn
+      -Dlogging.level.root=error
       -Dspring.threads.virtual.enabled=false
       -Dserver.undertow.threads.io=2
-      -Dserver.undertow.threads.worker=2
-  
+      -Dserver.undertow.threads.worker=4
+
+#####################################################
 
 services:
   nginx:
