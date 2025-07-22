@@ -55,16 +55,9 @@ public class RedisPaymentRepository {
 
     public void store(PaymentRequest request) {
         var data = String.format("%s:%s:%s", request.correlationId, request.amount, request.isDefault);
-//        log.info("Storando no redis...");
         redisTemplate
                 .opsForZSet()
                 .add(PAYMENTS, data, request.requestedAt.toEpochSecond());
-
-//        if (request.isDefault) {
-//            storeDefault(request, data);
-//        } else {
-//            storeFallback(request, data);
-//        }
     }
 
     private void storeDefault(PaymentRequest request, String data) {
@@ -86,8 +79,12 @@ public class RedisPaymentRepository {
 
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
 
-        from = getFrom(from);
-        to = getTo(to);
+        if (isNull(from)) {
+            from = OffsetDateTime.now().minusMinutes(2);
+        }
+        if (isNull(to)) {
+            to = OffsetDateTime.now().plusSeconds(10);
+        }
 
 //        if (from.getYear() < currentYear && to.getYear() > currentYear) {
 //            log.info("Getting full summary may be inconsistent until the end of async payment process");
@@ -112,20 +109,6 @@ public class RedisPaymentRepository {
         var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, from.toEpochSecond(), to.toEpochSecond());
 
         return calculateSummary(payments);
-    }
-
-    private static OffsetDateTime getTo(OffsetDateTime to) {
-        if (isNull(to)) {
-            to = OffsetDateTime.now();
-        }
-        return to;
-    }
-
-    private static OffsetDateTime getFrom(OffsetDateTime from) {
-        if (isNull(from)) {
-            from = OffsetDateTime.MIN;
-        }
-        return from;
     }
 
     private PaymentSummary getFullSummary() {
@@ -173,10 +156,10 @@ public class RedisPaymentRepository {
     }
 
     public void purge() {
-        redisTemplate.delete(DEFAULT_COUNT);
-        redisTemplate.delete(FALLBACK_COUNT);
-        redisTemplate.delete(DEFAULT_AMOUNT);
-        redisTemplate.delete(FALLBACK_AMOUNT);
+//        redisTemplate.delete(DEFAULT_COUNT);
+//        redisTemplate.delete(FALLBACK_COUNT);
+//        redisTemplate.delete(DEFAULT_AMOUNT);
+//        redisTemplate.delete(FALLBACK_AMOUNT);
         redisTemplate.delete(PAYMENTS);
     }
 }

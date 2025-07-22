@@ -19,15 +19,16 @@ public class ExecutorConfig {
     public ExecutorService executorService() {
 
         var virtual = Boolean.parseBoolean(System.getenv("VIRTUAL_THREADS"));
-
         int threadPoolSize = Integer.parseInt(System.getenv("THREAD_POOL_SIZE"));
+        int queueSize = Integer.parseInt(System.getenv("QUEUE_SIZE"));
+
         log.info("Using Virtual Threads: {}", virtual);
         log.info("Thread pool size: {}", threadPoolSize);
         return new ThreadPoolExecutor(
                 threadPoolSize,
                 threadPoolSize,
                 10, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(200, true),
+                new ArrayBlockingQueue<>(queueSize, true),
                 virtual ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory(),
                 new ThreadPoolExecutor.DiscardPolicy());
 
