@@ -26,8 +26,7 @@ k6 Tests → Nginx → [App1, App2] → Redis
 
 ### **Otimizações Implementadas**
 - **Async Processing**: POSTs não bloqueantes
-- **Redis Optimization**: Contadores para ranges amplos
-- **Memory Tuning**: Heap 70MB + Metaspace 70MB
+- **Natve Image**: Código java compilado.
 - **Connection Pooling**: Lettuce com conexões compartilhadas
 
 ### **Performance**
