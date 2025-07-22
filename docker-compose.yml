@@ -14,22 +14,29 @@ x-backend-templates:
           memory: "140MB"
 
   app-env: &app-env
+    ACTIVE_MONITOR: "true"
     SERVER_PORT: "8080"
     VIRTUAL_THREADS: "true"
-    THREAD_POOL_SIZE: "2"
-    QUEUE_SIZE: "500"
-    QUEUE_IS_FAIR: "false"
+    THREAD_POOL_SIZE: "10"
+    QUEUE_SIZE: "2000"
+    QUEUE_IS_FAIR: "true"
     REDIS_HOST: "redis"
     REPOSITORY_DELAY: "0"
     REQUEST_CONNECTION_TIMEOUT: "50"
-    REQUEST_READ_TIMEOUT: "6000"
+    REQUEST_READ_TIMEOUT: "2000"
     payment-processor.default.url: "http://payment-processor-default:8080"
     payment-processor.fallback.url: "http://payment-processor-fallback:8080"
-    JAVA_OPTS: >
-      -Dlogging.level.root=error
-      -Dspring.threads.virtual.enabled=false
-      -Dserver.undertow.threads.io=2
-      -Dserver.undertow.threads.worker=2
+    SPRING_APPLICATION_JSON: >
+      {
+        "spring.application.name": "ccs1201-rinha-backend-2025",
+        "spring.threads.virtual.enabled": false,
+        "server.servlet.session.persistent": false,
+        "server.servlet.session.tracking-modes": [],
+        "server.servlet.session.timeout": 0,
+        "logging.level.root": "info",
+        "server.undertow.threads.io": 2,
+        "server.undertow.threads.worker": 8
+      }
 
 #####################################################
 

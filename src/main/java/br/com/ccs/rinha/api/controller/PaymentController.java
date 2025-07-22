@@ -1,9 +1,10 @@
 package br.com.ccs.rinha.api.controller;
 
+import br.com.ccs.rinha.service.WebClientPaymentProcessorClientService;
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.api.model.output.PaymentSummary;
 import br.com.ccs.rinha.repository.RedisPaymentRepository;
-import br.com.ccs.rinha.service.PaymentProcessorClient;
+import br.com.ccs.rinha.service.PaymentProcessorClientService;
 import jakarta.annotation.PreDestroy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,28 +14,35 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @RestController
 public class PaymentController {
 
-    private final PaymentProcessorClient client;
+    private final PaymentProcessorClientService client;
     private final RedisPaymentRepository repository;
     private final ExecutorService executor;
+    private final WebClientPaymentProcessorClientService webClient;
 
-    public PaymentController(PaymentProcessorClient client, RedisPaymentRepository repository, ExecutorService executor) {
+    public PaymentController(PaymentProcessorClientService client,
+                             RedisPaymentRepository repository,
+                             ThreadPoolExecutor executor,
+                             WebClientPaymentProcessorClientService webClient) {
         this.client = client;
         this.repository = repository;
         this.executor = executor;
+        this.webClient = webClient;
     }
 
     @PostMapping("/payments")
     public void createPayment(@RequestBody PaymentRequest paymentRequest) {
-        CompletableFuture.runAsync(() -> {
+        executor.submit(() -> {
             paymentRequest.requestedAt = OffsetDateTime.now();
             client.processPayment(paymentRequest);
+//            webClient.processPayment(paymentRequest);
         }, executor);
+
     }
 
     @GetMapping("/payments-summary")

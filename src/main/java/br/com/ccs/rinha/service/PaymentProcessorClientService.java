@@ -9,22 +9,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
-public class PaymentProcessorClient {
+public class PaymentProcessorClientService {
 
-    private static final Logger log = LoggerFactory.getLogger(PaymentProcessorClient.class);
+    private static final Logger log = LoggerFactory.getLogger(PaymentProcessorClientService.class);
 
     private final RedisPaymentRepository repository;
     private final RestTemplate restTemplate;
     private final String defaultUrl;
     private final String fallbackUrl;
-    private final ExecutorService executorService;
+    private final ThreadPoolExecutor executorService;
+    private final AtomicInteger rejectedRetries = new AtomicInteger(0);
 
-    public PaymentProcessorClient(
+    public PaymentProcessorClientService(
             RedisPaymentRepository paymentRepository,
             RestTemplate restTemplate,
-            ExecutorService executorService,
+            ThreadPoolExecutor executorService,
             @Value("${payment-processor.default.url}") String defaultUrl,
             @Value("${payment-processor.fallback.url}") String fallbackUrl) {
 
@@ -48,6 +51,9 @@ public class PaymentProcessorClient {
 //            log.error("Max retries reached for payment {}", paymentRequest.correlationId);
             return;
         }
+//        if (retryCount > 0) {
+//            log.info("Retry count {}", retriesCounter.incrementAndGet());
+//        }
         postToDefault(paymentRequest, retryCount);
     }
 
@@ -68,8 +74,10 @@ public class PaymentProcessorClient {
             restTemplate.postForObject(fallbackUrl, paymentRequest, Object.class);
             repository.store(paymentRequest);
         } catch (Exception e) {
-//            log.error("Fallback Error {}", e.getMessage());
-            executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
+            if (!executorService.getQueue().offer(() -> processPaymentWithRetry(paymentRequest, retryCount + 1))) {
+                log.warn("Executor queue full, discarding task...");
+                log.warn("Rejected retries: {}", rejectedRetries.incrementAndGet());
+            }
         }
     }
 }

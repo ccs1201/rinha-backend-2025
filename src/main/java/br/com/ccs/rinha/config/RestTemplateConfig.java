@@ -29,4 +29,5 @@ public class RestTemplateConfig {
                         .withReadTimeout(Duration.ofMillis(readTimeOut)))
                 .build();
     }
+
 }

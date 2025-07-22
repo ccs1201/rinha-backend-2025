@@ -45,7 +45,8 @@ public class RedisPaymentRepository {
 
 
     public void store(PaymentRequest request) {
-        var data = String.format("%s:%s:%s", request.correlationId, request.amount, request.isDefault);
+        String data = request.correlationId + ":" + request.amount.multiply(BigDecimal.valueOf(100)).longValue() + ":" + request.isDefault;
+
         redisTemplate
                 .opsForZSet()
                 .add(PAYMENTS, data, request.requestedAt.toInstant().toEpochMilli());
@@ -54,26 +55,16 @@ public class RedisPaymentRepository {
 
     public PaymentSummary getSummary(OffsetDateTime from, OffsetDateTime to) {
 
-        from = getFrom(from);
-        to = getTo(to);
-
-        var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, from.toInstant().toEpochMilli(), to.toInstant().toEpochMilli());
-
-        return calculateSummary(payments);
-    }
-
-    private static OffsetDateTime getTo(OffsetDateTime to) {
-        if (isNull(to)) {
-            to = OffsetDateTime.now();
-        }
-        return to;
-    }
-
-    private static OffsetDateTime getFrom(OffsetDateTime from) {
         if (isNull(from)) {
             from = OffsetDateTime.now().minusMinutes(5);
         }
-        return from;
+
+        if (isNull(to)) {
+            to = OffsetDateTime.now();
+        }
+        var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, from.toInstant().toEpochMilli(), to.toInstant().toEpochMilli());
+
+        return calculateSummary(payments);
     }
 
     private PaymentSummary calculateSummary(Set<String> payments) {
@@ -83,24 +74,26 @@ public class RedisPaymentRepository {
 
         long defaultCount = 0;
         long fallbackCount = 0;
-        BigDecimal defaultAmount = BigDecimal.ZERO;
-        BigDecimal fallbackAmount = BigDecimal.ZERO;
+        long defaultAmount = 0L;
+        long fallbackAmount = 0L;
 
         for (String payment : payments) {
             String[] parts = payment.split(":");
-            BigDecimal amount = new BigDecimal(parts[1]);
-            if ("true".equals(parts[2])) {
+            long amount = Long.parseLong(parts[1]); // armazenar centavos
+            boolean isDefault = Boolean.parseBoolean(parts[2]);
+
+            if (isDefault) {
                 defaultCount++;
-                defaultAmount = defaultAmount.add(amount);
+                defaultAmount += amount;
             } else {
                 fallbackCount++;
-                fallbackAmount = fallbackAmount.add(amount);
+                fallbackAmount += amount;
             }
         }
 
         return new PaymentSummary(
-                new PaymentSummary.Summary(defaultCount, defaultAmount),
-                new PaymentSummary.Summary(fallbackCount, fallbackAmount));
+                new PaymentSummary.Summary(defaultCount, new BigDecimal(defaultAmount).movePointLeft(2)),
+                new PaymentSummary.Summary(fallbackCount, new BigDecimal(fallbackAmount).movePointLeft(2)));
     }
 
     public void purge() {
