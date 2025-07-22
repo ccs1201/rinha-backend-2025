@@ -3,8 +3,8 @@
 ## REPO -> [Rinha-Backend-2025-CCS1201](https://github.com/ccs1201/rinha-backend-2025)
 
 ## Stack Tecnológica
-* **Java 24** - JVM com otimizações mais recentes
-* **Spring Boot 3.5.3** - Framework web reativo
+* **GraalVM 24** - Imagem nativa/compilada
+* **Spring Boot 3.5.3** - Framework web
 * **Undertow** - Web server de alta performance
 * **Redis 7** - Storage principal com Sorted Sets
 * **Nginx** - Load balancer
