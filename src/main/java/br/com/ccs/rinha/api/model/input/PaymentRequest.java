@@ -16,10 +16,6 @@ public final class PaymentRequest {
     public PaymentRequest() {
     }
 
-    public PaymentRequest(UUID correlationId, BigDecimal amount) {
-        this(correlationId, amount, OffsetDateTime.now(), true);
-    }
-
     public PaymentRequest(UUID correlationId, BigDecimal amount, OffsetDateTime requestedAt, boolean isDefault) {
         this.correlationId = correlationId;
         this.amount = amount;

@@ -5,8 +5,6 @@ import br.com.ccs.rinha.api.model.output.PaymentSummary;
 import br.com.ccs.rinha.repository.RedisPaymentRepository;
 import br.com.ccs.rinha.service.PaymentProcessorClient;
 import jakarta.annotation.PreDestroy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,8 +18,6 @@ import java.util.concurrent.ExecutorService;
 
 @RestController
 public class PaymentController {
-
-    private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
     private final PaymentProcessorClient client;
     private final RedisPaymentRepository repository;
@@ -44,18 +40,13 @@ public class PaymentController {
     @GetMapping("/payments-summary")
     public PaymentSummary getPaymentsSummary(@RequestParam(required = false) OffsetDateTime from,
                                              @RequestParam(required = false) OffsetDateTime to) {
-//        log.info("Starting payments summary from {} to {}", from, to);
-//        long start = System.currentTimeMillis();
 
         return repository.getSummary(from, to);
-//        log.info("Got payments summary from {} to {} in {}ms", from, to, System.currentTimeMillis() - start);
     }
 
     @PostMapping("/purge-payments")
     public ResponseEntity<Void> purgePayments() {
-//        log.info("Purging payments");
         repository.purge();
-//        log.info("Payments purged");
         return ResponseEntity.ok().build();
     }
 
