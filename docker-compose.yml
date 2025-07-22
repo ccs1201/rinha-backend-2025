@@ -19,7 +19,7 @@ x-backend-templates:
   app-env: &app-env
     SERVER_PORT: "8080"
     VIRTUAL_THREADS: "true"
-    THREAD_POOL_SIZE: "50"
+    THREAD_POOL_SIZE: "5"
     QUEUE_SIZE: "500"
     REDIS_HOST: "redis"
     REQUEST_CONNECTION_TIMEOUT: "100"

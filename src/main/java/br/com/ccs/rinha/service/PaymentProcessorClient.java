@@ -35,7 +35,6 @@ public class PaymentProcessorClient {
         this.restTemplate = restTemplate;
         this.executorService = executorService;
 
-
         log.info("Default service URL: {}", this.defaultUrl);
         log.info("Fallback fallback URL: {}", this.fallbackUrl);
     }
@@ -46,7 +45,7 @@ public class PaymentProcessorClient {
 
     private void processPaymentWithRetry(PaymentRequest paymentRequest, int retryCount) {
         if (retryCount >= 3) {
-            log.error("Max retries reached for payment {}", paymentRequest.correlationId);
+//            log.error("Max retries reached for payment {}", paymentRequest.correlationId);
             return;
         }
         postToDefault(paymentRequest, retryCount);
@@ -58,7 +57,7 @@ public class PaymentProcessorClient {
             restTemplate.postForObject(defaultUrl, paymentRequest, Object.class);
             repository.store(paymentRequest);
         } catch (Exception e) {
-            log.error("Default Error {}", e.getMessage());
+//            log.error("Default Error {}", e.getMessage());
             postToFallback(paymentRequest, retryCount);
         }
     }
@@ -69,7 +68,7 @@ public class PaymentProcessorClient {
             restTemplate.postForObject(fallbackUrl, paymentRequest, Object.class);
             repository.store(paymentRequest);
         } catch (Exception e) {
-            log.error("Fallback Error {}", e.getMessage());
+//            log.error("Fallback Error {}", e.getMessage());
             executorService.submit(() -> processPaymentWithRetry(paymentRequest, retryCount + 1));
         }
     }
