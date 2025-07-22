@@ -113,8 +113,11 @@ public class RedisPaymentRepository {
 //        }
 
 
-        var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, from.toEpochSecond(), to.toEpochSecond());
+        return getPaymentSummary(from, to);
+    }
 
+    private PaymentSummary getPaymentSummary(OffsetDateTime from, OffsetDateTime to) {
+        var payments = redisTemplate.opsForZSet().rangeByScore(PAYMENTS, from.toEpochSecond(), to.toEpochSecond());
         return calculateSummary(payments);
     }
 
