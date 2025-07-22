@@ -1,6 +1,5 @@
 package br.com.ccs.rinha.api.controller;
 
-import br.com.ccs.rinha.service.WebClientPaymentProcessorClientService;
 import br.com.ccs.rinha.api.model.input.PaymentRequest;
 import br.com.ccs.rinha.api.model.output.PaymentSummary;
 import br.com.ccs.rinha.repository.RedisPaymentRepository;
@@ -23,16 +22,13 @@ public class PaymentController {
     private final PaymentProcessorClientService client;
     private final RedisPaymentRepository repository;
     private final ExecutorService executor;
-    private final WebClientPaymentProcessorClientService webClient;
 
     public PaymentController(PaymentProcessorClientService client,
                              RedisPaymentRepository repository,
-                             ThreadPoolExecutor executor,
-                             WebClientPaymentProcessorClientService webClient) {
+                             ThreadPoolExecutor executor) {
         this.client = client;
         this.repository = repository;
         this.executor = executor;
-        this.webClient = webClient;
     }
 
     @PostMapping("/payments")
@@ -40,7 +36,6 @@ public class PaymentController {
         executor.submit(() -> {
             paymentRequest.requestedAt = OffsetDateTime.now();
             client.processPayment(paymentRequest);
-//            webClient.processPayment(paymentRequest);
         }, executor);
 
     }

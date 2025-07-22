@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export JAVA_HOME=/home/ccs/graalvm-jdk-24.0.2+11.1
+export JAVA_HOME=/home/csouza/.jdks/graalvm-jdk-24.0.1
 export PATH=$JAVA_HOME/bin:$PATH
 source ~/.bashrc
 

@@ -52,7 +52,7 @@ public class ExecutorMonitor {
             });
 
         } else {
-            log.error("Executor inactive.");
+            log.error("Executor Monitor inactive.");
         }
     }
 }

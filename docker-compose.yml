@@ -14,16 +14,16 @@ x-backend-templates:
           memory: "140MB"
 
   app-env: &app-env
-    ACTIVE_MONITOR: "true"
+    ACTIVE_MONITOR: "false"
     SERVER_PORT: "8080"
     VIRTUAL_THREADS: "true"
-    THREAD_POOL_SIZE: "10"
-    QUEUE_SIZE: "2000"
+    THREAD_POOL_SIZE: "8"
+    QUEUE_SIZE: "5000"
     QUEUE_IS_FAIR: "true"
     REDIS_HOST: "redis"
     REPOSITORY_DELAY: "0"
     REQUEST_CONNECTION_TIMEOUT: "50"
-    REQUEST_READ_TIMEOUT: "2000"
+    REQUEST_READ_TIMEOUT: "3000"
     payment-processor.default.url: "http://payment-processor-default:8080"
     payment-processor.fallback.url: "http://payment-processor-fallback:8080"
     SPRING_APPLICATION_JSON: >

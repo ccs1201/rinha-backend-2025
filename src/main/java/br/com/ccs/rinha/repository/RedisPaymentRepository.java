@@ -22,14 +22,11 @@ public class RedisPaymentRepository {
     private final RedisTemplate<String, String> redisTemplate;
     private static final String PAYMENTS = "payments";
     private final boolean shouldShutdownImmediately;
-    private final int repositoryDelay;
 
     public RedisPaymentRepository(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
         this.shouldShutdownImmediately = Boolean.parseBoolean(System.getenv("SHUTDOWN_IMMEDIATELY"));
-        this.repositoryDelay = Integer.parseInt(System.getenv("REPOSITORY_DELAY"));
         log.info("ShutDown immediately: {}", shouldShutdownImmediately);
-        log.info("Repository delay set to {}", repositoryDelay);
     }
 
     @PostConstruct
