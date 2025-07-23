@@ -4,7 +4,6 @@
 
 ## Stack Tecnológica
 * **Java 24** - JVM com otimizações mais recentes
-* **CCS-Boot 0.0.6** - Framework customizado baseado em CDI/Weld
 * **Undertow** - Web server de alta performance
 * **PostgreSQL 15** - Storage principal com índices otimizados
 * **HikariCP** - Pool de conexões otimizado
@@ -63,7 +62,6 @@ k6 run rinha.js
 
 ## Technology Stack
 * **Java 24** - JVM with latest optimizations
-* **CCS-Boot 0.0.6** - Custom framework based on CDI/Weld
 * **Undertow** - High-performance web server
 * **PostgreSQL 15** - Primary storage with optimized indexes
 * **HikariCP** - Optimized connection pool
