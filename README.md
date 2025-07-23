@@ -25,7 +25,6 @@ k6 Tests → Nginx → [App1, App2] → PostgreSQL
 - `POST /purge-payments` - Limpeza do storage
 
 ### **Otimizações Implementadas**
-- **Framework Customizado**: CCS-Boot com CDI/Weld para injeção de dependência
 - **Async Processing**: POSTs não bloqueantes com CompletableFuture
 - **JDBC Puro**: Sem overhead de ORM, apenas HikariCP
 - **Índices Otimizados**: Clustered e covering indexes no PostgreSQL
@@ -83,7 +82,6 @@ k6 Tests → Nginx → [App1, App2] → PostgreSQL
 - `POST /purge-payments` - Storage cleanup
 
 ### **Implemented Optimizations**
-- **Custom Framework**: CCS-Boot with CDI/Weld for dependency injection
 - **Async Processing**: Non-blocking POSTs with CompletableFuture
 - **Pure JDBC**: No ORM overhead, only HikariCP
 - **Optimized Indexes**: Clustered and covering indexes on PostgreSQL
